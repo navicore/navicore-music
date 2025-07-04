@@ -21,12 +21,21 @@ jobs:
       - name: Install dependencies
         run: npm install
       
+      - name: List directory structure
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Build directory:"
+          ls -la build/worker/ || echo "No build/worker directory"
+      
       - name: Deploy Worker to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --minify
+          command: deploy --minify --compatibility-date 2024-12-01
       
       - name: Deploy Pages to Cloudflare
         uses: cloudflare/wrangler-action@v3
