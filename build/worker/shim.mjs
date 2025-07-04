@@ -192,16 +192,41 @@ async function handleGetTrack(id, env) {
 }
 
 async function handleDeleteTrack(id, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  // First get the track to find the file path
+  const track = await env.DB.prepare('SELECT file_path FROM tracks WHERE id = ?')
+    .bind(id)
+    .first();
+  
+  if (!track) {
+    return new Response('Track not found', { 
+      status: 404,
+      headers: corsHeaders 
+    });
+  }
+  
+  // Delete from database
   const result = await env.DB.prepare('DELETE FROM tracks WHERE id = ?')
     .bind(id)
     .run();
   
-  if (result.meta.changes === 0) {
-    return new Response('Track not found', { status: 404 });
+  // Also delete the file from R2
+  if (track.file_path) {
+    try {
+      await env.MUSIC_BUCKET.delete(track.file_path);
+    } catch (error) {
+      console.error('Failed to delete file from R2:', error);
+      // Continue anyway - the database record is already deleted
+    }
   }
   
   return new Response(JSON.stringify({ message: 'Track deleted successfully' }), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
