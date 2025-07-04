@@ -91,7 +91,9 @@ lint-toml:
 # Security audit
 audit:
 	@echo "Running security audit..."
-	cargo audit
+	# Allow proc-macro-error warning (unmaintained, not a vulnerability)
+	# Allow RSA vulnerability in sqlx-mysql (we only use SQLite)
+	cargo audit --ignore RUSTSEC-2024-0370 --ignore RUSTSEC-2023-0071
 
 # Full check - everything
 full-check: fmt lint-toml clippy test audit build
