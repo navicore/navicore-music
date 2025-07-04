@@ -1,4 +1,4 @@
-use yew::prelude::*;
+use yew::prelude::{Html, function_component, html};
 
 #[function_component(App)]
 pub fn app() -> Html {
