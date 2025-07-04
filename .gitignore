@@ -32,7 +32,7 @@ pkg/
 wasm-pack.log
 
 # Frontend build
-dist/
+# Note: dist/ contains our static HTML files, so we track it in git
 node_modules/
 
 # Logs

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navicore Music - System Status</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.2/dist/full.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-base-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Navicore Music - System Status</h1>
+        
+        <div class="space-y-4">
+            <!-- Frontend Status -->
+            <div class="card bg-base-200">
+                <div class="card-body">
+                    <h2 class="card-title">Frontend</h2>
+                    <div class="flex items-center gap-2">
+                        <div class="badge badge-success gap-2">
+                            <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                            ONLINE
+                        </div>
+                        <span class="text-sm opacity-70">https://music.navicore.tech</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API Status -->
+            <div class="card bg-base-200">
+                <div class="card-body">
+                    <h2 class="card-title">API Status</h2>
+                    <div id="api-status" class="space-y-2">
+                        <div class="skeleton h-6 w-48"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Database Status -->
+            <div class="card bg-base-200">
+                <div class="card-body">
+                    <h2 class="card-title">Database</h2>
+                    <div id="db-status" class="space-y-2">
+                        <div class="skeleton h-6 w-48"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sample Data -->
+            <div class="card bg-base-200">
+                <div class="card-body">
+                    <h2 class="card-title">Sample Data</h2>
+                    <div id="sample-data" class="space-y-2">
+                        <div class="skeleton h-24 w-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center">
+            <a href="/" class="btn btn-primary">Go to App</a>
+            <a href="https://api.navicore.tech/health" target="_blank" class="btn btn-ghost">View API Health</a>
+        </div>
+    </div>
+    
+    <script>
+        // Check API status
+        async function checkStatus() {
+            try {
+                // Check health endpoint
+                const healthRes = await fetch('https://api.navicore.tech/health');
+                const health = await healthRes.json();
+                
+                document.getElementById('api-status').innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <div class="badge badge-success gap-2">
+                            <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                            ${health.status.toUpperCase()}
+                        </div>
+                        <span class="text-sm opacity-70">https://api.navicore.tech</span>
+                    </div>
+                    <div class="text-sm opacity-70">Environment: ${health.environment}</div>
+                `;
+                
+                document.getElementById('db-status').innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <div class="badge ${health.bindings.db === 'connected' ? 'badge-success' : 'badge-error'} gap-2">
+                            <div class="w-2 h-2 ${health.bindings.db === 'connected' ? 'bg-success' : 'bg-error'} rounded-full animate-pulse"></div>
+                            ${health.bindings.db.toUpperCase()}
+                        </div>
+                        <span class="text-sm opacity-70">Cloudflare D1</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <div class="badge ${health.bindings.r2 === 'connected' ? 'badge-success' : 'badge-error'} gap-2">
+                            <div class="w-2 h-2 ${health.bindings.r2 === 'connected' ? 'bg-success' : 'bg-error'} rounded-full animate-pulse"></div>
+                            R2 Storage ${health.bindings.r2.toUpperCase()}
+                        </div>
+                    </div>
+                `;
+                
+                // Check tracks
+                const tracksRes = await fetch('https://api.navicore.tech/api/v1/tracks');
+                const tracks = await tracksRes.json();
+                
+                document.getElementById('sample-data').innerHTML = `
+                    <div class="stat">
+                        <div class="stat-title">Total Tracks</div>
+                        <div class="stat-value">${tracks.count}</div>
+                        <div class="stat-desc">
+                            ${tracks.count > 0 ? 'Latest: ' + tracks.tracks[0].title : 'No tracks yet'}
+                        </div>
+                    </div>
+                    ${tracks.count > 0 ? `
+                        <div class="divider"></div>
+                        <div class="text-sm space-y-1">
+                            ${tracks.tracks.slice(0, 3).map(track => `
+                                <div class="flex justify-between">
+                                    <span>${track.title}</span>
+                                    <span class="opacity-70">${track.artist}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                `;
+                
+            } catch (error) {
+                console.error('Status check failed:', error);
+                document.getElementById('api-status').innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <div class="badge badge-error gap-2">
+                            <div class="w-2 h-2 bg-error rounded-full"></div>
+                            ERROR
+                        </div>
+                        <span class="text-sm opacity-70">${error.message}</span>
+                    </div>
+                `;
+            }
+        }
+        
+        // Check status on load
+        checkStatus();
+        
+        // Refresh every 30 seconds
+        setInterval(checkStatus, 30000);
+    </script>
+</body>
+</html>

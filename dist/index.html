@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navicore Music</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.2/dist/full.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.9"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+    <link href="/static/css/app.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-base-100">
+    <!-- Mobile Menu Button -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+        <label for="drawer-toggle" class="btn btn-square btn-ghost">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </label>
+    </div>
+
+    <div class="drawer lg:drawer-open">
+        <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+        
+        <div class="drawer-content">
+            <!-- Main Layout Grid -->
+            <div class="min-h-screen grid grid-rows-[1fr_auto] lg:grid-rows-1 lg:grid-cols-1 xl:grid-cols-[1fr_24rem]">
+                
+                <!-- Main Content Area -->
+                <main class="flex-1 p-4 lg:p-8 overflow-y-auto">
+                    <div id="main-content" hx-get="/templates/track-list.html" hx-trigger="load" hx-swap="innerHTML">
+                        <!-- Dynamic content loads here -->
+                        <div class="flex items-center justify-center h-64">
+                            <span class="loading loading-spinner loading-lg"></span>
+                        </div>
+                    </div>
+                </main>
+                
+                <!-- Now Playing Panel - Desktop only -->
+                <aside class="hidden xl:block bg-base-200 p-6 overflow-y-auto">
+                    <h2 class="text-xl font-bold mb-4">Now Playing</h2>
+                    <div id="now-playing-panel">
+                        <!-- Album art -->
+                        <div class="aspect-square bg-base-300 rounded-lg mb-4">
+                            <img id="now-playing-art" class="w-full h-full object-cover rounded-lg" />
+                        </div>
+                        
+                        <!-- Track info -->
+                        <div class="mb-4">
+                            <h3 id="now-playing-title" class="text-lg font-semibold">No track playing</h3>
+                            <p id="now-playing-artist" class="text-base-content/70">Select a track to play</p>
+                        </div>
+                        
+                        <!-- Queue -->
+                        <div>
+                            <h4 class="text-sm font-semibold mb-2 text-base-content/70">Up Next</h4>
+                            <div id="play-queue" class="space-y-2">
+                                <!-- Queue items load here -->
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+                
+                <!-- Mobile Player Bar -->
+                <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-base-300 border-t border-base-content/10">
+                    <div id="mobile-player" class="p-2">
+                        <!-- Mini player for mobile -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="drawer-side z-40">
+            <label for="drawer-toggle" class="drawer-overlay"></label>
+            <div class="w-64 min-h-full bg-base-200 p-4">
+                <!-- Logo -->
+                <div class="mb-8 px-2">
+                    <h1 class="text-2xl font-bold text-primary">Navicore Music</h1>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="space-y-2">
+                    <a href="/home.html" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-300 transition-colors">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                        </svg>
+                        <span>Home</span>
+                    </a>
+                    <a href="/" class="flex items-center gap-3 px-4 py-2 rounded-lg bg-base-300">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
+                        </svg>
+                        <span>Library</span>
+                    </a>
+                    <a href="/upload.html" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-300 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        <span>Upload</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio Player Widget Mount Point -->
+    <div id="audio-player-mount" class="fixed bottom-0 left-0 right-0 lg:left-64 xl:right-[24rem] bg-base-300 border-t border-base-content/10">
+        <!-- WASM Audio Player loads here -->
+    </div>
+    
+    <script type="module">
+        // Initialize WASM audio player when ready
+        import init from '/wasm/navicore_music_frontend.js';
+        
+        async function initializePlayer() {
+            try {
+                await init();
+                console.log('WASM initialized successfully');
+                // TODO: Initialize audio player component
+            } catch (error) {
+                console.error('Failed to initialize WASM:', error);
+            }
+        }
+        
+        // Configure HTMX to use our API
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['Content-Type'] = 'application/json';
+            // Update API URLs to use our backend
+            if (event.detail.path.startsWith('/api/')) {
+                event.detail.path = 'https://api.navicore.tech' + event.detail.path;
+            }
+        });
+        
+        // Handle URL fragment for view mode
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            if (event.detail.target.id === 'main-content' && window.location.hash === '#list') {
+                // If we have #list in URL, switch to list view after content loads
+                setTimeout(() => {
+                    const listButton = document.querySelector('[data-view="list"]');
+                    if (listButton) {
+                        listButton.click();
+                    }
+                }, 100);
+            }
+        });
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePlayer);
+        } else {
+            initializePlayer();
+        }
+    </script>
+</body>
+</html>
