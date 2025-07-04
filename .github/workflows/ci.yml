@@ -97,7 +97,9 @@ jobs:
           key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.lock') }}
       
       - name: Build frontend WASM
-        run: make build-frontend
+        run: |
+          cd frontend
+          wasm-pack build --target web --out-dir ../backend/static/wasm
 
   security:
     name: Security Audit

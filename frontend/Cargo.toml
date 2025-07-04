@@ -25,9 +25,12 @@ gloo = { workspace = true }
 wasm-bindgen-futures = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["js"] }
 chrono = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
