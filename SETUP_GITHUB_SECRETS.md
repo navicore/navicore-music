@@ -14,8 +14,11 @@ To enable automatic deployments via GitHub Actions, you need to set up the follo
      - Cloudflare Pages: Edit  
      - D1: Edit
      - R2: Edit
-   - **Zone permissions:**
-     - Zone: Read (select your navicore.tech zone)
+   - **Zone permissions for navicore.tech:**
+     - Zone: Read
+     - Workers Routes: Edit
+   - **User permissions (optional but recommended):**
+     - User Details: Read
 4. Copy the token and add it as `CLOUDFLARE_API_TOKEN` in GitHub Secrets
 
 ### 2. CLOUDFLARE_ACCOUNT_ID
