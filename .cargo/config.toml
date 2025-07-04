@@ -1,0 +1,16 @@
+[target.'cfg(all())']
+rustflags = [
+    "-W", "clippy::all",
+    "-W", "clippy::pedantic",
+    "-W", "clippy::nursery",
+    "-W", "clippy::cargo",
+    "-W", "rust-2024-compatibility",
+    "-A", "clippy::module_name_repetitions",
+    "-A", "clippy::must_use_candidate",
+    "-A", "clippy::missing_errors_doc",
+    "-A", "clippy::missing_panics_doc",
+    "-A", "clippy::multiple_crate_versions",
+]
+
+[build]
+target-dir = "target"

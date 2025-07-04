@@ -4,9 +4,14 @@ resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 authors = ["Navicore"]
 license = "MIT"
+description = "Personal music streaming service"
+repository = "https://github.com/navicore/navicore-music"
+readme = "README.md"
+keywords = ["music", "streaming", "rust", "wasm"]
+categories = ["multimedia::audio", "web-programming"]
 
 [workspace.dependencies]
 # Shared dependencies
@@ -22,7 +27,7 @@ axum = "0.8"
 tokio = { version = "1.0", features = ["full"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "migrate", "uuid", "chrono"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "uuid", "chrono", "macros"] }
 aws-sdk-s3 = "1.0"
 aws-config = "1.0"
 tracing = "0.1"
@@ -31,7 +36,7 @@ jsonwebtoken = "9.0"
 argon2 = "0.5"
 
 # Frontend dependencies
-yew = "0.21"
+yew = { version = "0.21", features = ["csr"] }
 wasm-bindgen = "0.2"
 web-sys = "0.3"
 gloo = "0.11"
