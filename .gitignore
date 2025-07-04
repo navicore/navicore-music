@@ -73,3 +73,7 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Node modules (for local wrangler)
+node_modules/
+package-lock.json

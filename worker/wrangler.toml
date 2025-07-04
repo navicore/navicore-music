@@ -1,0 +1,35 @@
+name = "navicore-music-api"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-12-01"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[build.upload]
+dir = "build/worker"
+format = "modules"
+main = "./shim.mjs"
+
+[[build.upload.rules]]
+globs = ["**/*.wasm"]
+type = "CompiledWasm"
+
+# Custom domain routes
+routes = [
+    { pattern = "api.navicore.tech/*", zone_name = "navicore.tech" }
+]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "navicore-music"
+database_id = "c09c462b-e2f1-420d-a3fa-d0e8bc19736e"
+
+# R2 Bucket binding
+[[r2_buckets]]
+binding = "MUSIC_BUCKET"
+bucket_name = "navicore-music-files"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"

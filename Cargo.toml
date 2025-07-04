@@ -1,10 +1,10 @@
 [workspace]
-members = ["backend", "frontend", "shared"]
+members = ["backend", "frontend", "shared", "worker"]
 resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 authors = ["Navicore"]
 license = "MIT"
 description = "Personal music streaming service"
@@ -27,7 +27,7 @@ axum = "0.8"
 tokio = { version = "1.0", features = ["full"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "uuid", "chrono", "macros"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "uuid", "chrono", "macros"] }
 aws-sdk-s3 = "1.0"
 aws-config = "1.0"
 tracing = "0.1"

@@ -1,0 +1,39 @@
+name = "navicore-music-api"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-12-01"
+
+# Note: Workers have a 128MB request body limit by default
+
+# Custom domain routes
+routes = [
+    { pattern = "api.navicore.tech/*", zone_name = "navicore.tech" }
+]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "navicore-music"
+database_id = "c09c462b-e2f1-420d-a3fa-d0e8bc19736e"
+
+# R2 Bucket binding
+[[r2_buckets]]
+binding = "MUSIC_BUCKET"
+bucket_name = "navicore-music-files"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+JWT_SECRET = "YOUR_JWT_SECRET" # Generate with: openssl rand -base64 32
+
+# Development overrides
+[env.development]
+vars = { ENVIRONMENT = "development" }
+
+# KV namespace for sessions (optional - uncomment when needed)
+# [[kv_namespaces]]
+# binding = "SESSIONS"
+# id = "YOUR_KV_ID" # Will be filled after creating KV namespace
+
+# Secrets to be set with wrangler secret
+# wrangler secret put R2_ACCESS_KEY_ID
+# wrangler secret put R2_SECRET_ACCESS_KEY
