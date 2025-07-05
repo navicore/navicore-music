@@ -62,7 +62,7 @@ jobs:
           BACKUP_FILE="backup_${TIMESTAMP}.sql"
           
           # Export the database
-          wrangler d1 export navicore-music-db --output=$BACKUP_FILE
+          wrangler d1 export navicore-music --output=$BACKUP_FILE
           
           # Upload to R2 for safekeeping
           wrangler r2 object put navicore-music-files/backups/$BACKUP_FILE --file=$BACKUP_FILE
@@ -78,12 +78,12 @@ jobs:
           echo "🗑️ Dropping all tables..."
           
           # Get list of tables
-          TABLES=$(wrangler d1 execute navicore-music-db --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%';" --json | jq -r '.result[].results[].name' 2>/dev/null || echo "")
+          TABLES=$(wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%';" --json | jq -r '.result[].results[].name' 2>/dev/null || echo "")
           
           # Drop each table
           for TABLE in $TABLES; do
             echo "Dropping table: $TABLE"
-            wrangler d1 execute navicore-music-db --command="DROP TABLE IF EXISTS $TABLE;"
+            wrangler d1 execute navicore-music --command="DROP TABLE IF EXISTS $TABLE;"
           done
           
           echo "📝 Creating fresh schema..."
@@ -101,7 +101,7 @@ jobs:
           echo "Using schema: $SCHEMA_FILE"
           
           # Execute the schema file
-          wrangler d1 execute navicore-music-db --file=$SCHEMA_FILE
+          wrangler d1 execute navicore-music --file=$SCHEMA_FILE
           
           echo "✅ Database provisioned with fresh schema"
       
@@ -114,7 +114,7 @@ jobs:
           echo "🔄 Running database migrations..."
           
           # Create migrations tracking table if it doesn't exist
-          wrangler d1 execute navicore-music-db --command="
+          wrangler d1 execute navicore-music --command="
             CREATE TABLE IF NOT EXISTS migrations (
               id INTEGER PRIMARY KEY,
               filename TEXT UNIQUE NOT NULL,
@@ -122,7 +122,7 @@ jobs:
             );"
           
           # Get list of applied migrations
-          APPLIED=$(wrangler d1 execute navicore-music-db --command="SELECT filename FROM migrations;" --json | jq -r '.result[].results[].filename' 2>/dev/null || echo "")
+          APPLIED=$(wrangler d1 execute navicore-music --command="SELECT filename FROM migrations;" --json | jq -r '.result[].results[].filename' 2>/dev/null || echo "")
           
           # Run each migration file in order
           for MIGRATION in migrations/*.sql; do
@@ -136,10 +136,10 @@ jobs:
                 echo "▶️ Applying migration: $FILENAME"
                 
                 # Execute the migration
-                wrangler d1 execute navicore-music-db --file="$MIGRATION"
+                wrangler d1 execute navicore-music --file="$MIGRATION"
                 
                 # Record the migration
-                wrangler d1 execute navicore-music-db --command="INSERT INTO migrations (filename) VALUES ('$FILENAME');"
+                wrangler d1 execute navicore-music --command="INSERT INTO migrations (filename) VALUES ('$FILENAME');"
                 
                 echo "✅ Applied: $FILENAME"
               fi
@@ -158,14 +158,14 @@ jobs:
           
           # List all tables
           echo "Tables:"
-          wrangler d1 execute navicore-music-db --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;" --json | jq -r '.result[].results[].name' || echo "No tables found"
+          wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;" --json | jq -r '.result[].results[].name' || echo "No tables found"
           
           # Check for specific expected tables
           EXPECTED_TABLES="tracks albums tags album_tags track_tags playlists users"
           MISSING_TABLES=""
           
           for TABLE in $EXPECTED_TABLES; do
-            if ! wrangler d1 execute navicore-music-db --command="SELECT name FROM sqlite_master WHERE type='table' AND name='$TABLE';" --json | jq -e '.result[].results[0]' > /dev/null 2>&1; then
+            if ! wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name='$TABLE';" --json | jq -e '.result[].results[0]' > /dev/null 2>&1; then
               MISSING_TABLES="$MISSING_TABLES $TABLE"
             fi
           done
