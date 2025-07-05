@@ -137,10 +137,14 @@ function renderLibrary() {
         
         // Display albums
         container.innerHTML = '<div class="space-y-6">' + Object.entries(albums).map(([key, album]) => `
-            <div class="card bg-base-200 shadow-xl">
+            <div class="card bg-base-200 shadow-xl"
+                 oncontextmenu="event.preventDefault(); copyAlbumLink('${key.replace(/'/g, "\\\\'")}')"
+                 title="Right-click to copy album link">
                 <div class="card-body">
                     <div class="flex justify-between items-start">
-                        <div>
+                        <a href="/#album/${encodeURIComponent(key)}" 
+                           onclick="event.preventDefault(); updateUrlAndView('album', '${key.replace(/'/g, "\\\\'")}')"
+                           class="block hover:opacity-80 transition-opacity">
                             <h3 class="card-title text-xl">${album.album}</h3>
                             <p class="text-base-content/70">${album.artist}</p>
                             <p class="text-sm opacity-70 mt-1">
@@ -148,7 +152,7 @@ function renderLibrary() {
                                 ${album.genre ? `• ${album.genre}` : ''}
                                 • ${album.tracks.length} tracks
                             </p>
-                        </div>
+                        </a>
                         <div class="flex gap-2">
                             <button class="btn btn-sm btn-circle btn-primary" onclick="playAlbum('${key.replace(/'/g, "\\'")}')">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -172,8 +176,11 @@ function renderLibrary() {
                     <!-- Track list -->
                     <div class="mt-4 space-y-1">
                         ${album.tracks.map((track, index) => `
-                            <div class="flex items-center gap-3 p-2 rounded hover:bg-base-300 transition-colors cursor-pointer group"
-                                 onclick="playTrack('${track.id}')">
+                            <a href="/#track/${track.id}"
+                               class="flex items-center gap-3 p-2 rounded hover:bg-base-300 transition-colors cursor-pointer group block"
+                               onclick="event.preventDefault(); updateUrlAndView('track', '${track.id}')"
+                               oncontextmenu="event.preventDefault(); copyTrackLink('${track.id}')"
+                               title="Right-click to copy track link">
                                 <span class="text-sm w-6 text-base-content/50">${track.track_number || index + 1}</span>
                                 <div class="flex-1">
                                     <span class="text-sm">${track.title}</span>
@@ -181,12 +188,13 @@ function renderLibrary() {
                                 <span class="text-sm text-base-content/50">
                                     ${formatDuration(track.duration)}
                                 </span>
-                                <button class="btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onclick="event.stopPropagation(); event.preventDefault(); playTrack('${track.id}')">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
                                     </svg>
                                 </button>
-                            </div>
+                            </a>
                         `).join('')}
                     </div>
                 </div>
@@ -578,4 +586,19 @@ function showToast(message) {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+}
+
+// Update URL and view when clicking albums/tracks
+function updateUrlAndView(type, id) {
+    if (type === 'album') {
+        // Update URL without page reload
+        history.pushState({}, '', `/#album/${encodeURIComponent(id)}`);
+        // Highlight the album
+        showAlbumDetails(id);
+    } else if (type === 'track') {
+        // Update URL without page reload
+        history.pushState({}, '', `/#track/${id}`);
+        // Play the track
+        playTrack(id);
+    }
 }

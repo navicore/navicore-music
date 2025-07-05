@@ -131,15 +131,18 @@
                 .reverse();
             
             const albumsHtml = recentAlbums.map(([key, album]) => `
-                <div class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer"
-                     onclick="navigateToAlbum('${key.replace(/'/g, "\\'")}')"
-                     data-album-key="${key.replace(/"/g, '&quot;')}">
+                <a href="/#album/${encodeURIComponent(key)}"
+                   class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer block"
+                   onclick="event.preventDefault(); window.navigateToAlbum('${key.replace(/'/g, "\\'")}')"
+                   oncontextmenu="event.preventDefault(); copyAlbumLink('${key.replace(/'/g, "\\'")}')"
+                   data-album-key="${key.replace(/"/g, '&quot;')}"
+                   title="Right-click to copy link">
                     <div class="card-body p-4">
                         <div class="aspect-square bg-base-300 rounded mb-2"></div>
                         <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
                         <p class="text-xs opacity-70">${album.artist}</p>
                     </div>
-                </div>
+                </a>
             `).join('');
             
             document.getElementById('recent-albums').innerHTML = albumsHtml || 
@@ -151,4 +154,39 @@
             document.getElementById('track-count').textContent = '0';
             document.getElementById('total-duration').textContent = '0h 0m';
         });
+    
+    // Copy album link function (if not already defined)
+    if (typeof copyAlbumLink === 'undefined') {
+        window.copyAlbumLink = function(albumKey) {
+            const url = `https://navicore.tech/#album/${encodeURIComponent(albumKey)}`;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Album link copied!');
+                }).catch(() => {
+                    fallbackCopy(url);
+                });
+            } else {
+                fallbackCopy(url);
+            }
+        };
+        
+        function fallbackCopy(text) {
+            const input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            showToast('Album link copied!');
+        }
+        
+        window.showToast = function(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-top toast-center';
+            toast.innerHTML = `<div class="alert alert-success"><span>${message}</span></div>`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        };
+    }
 </script>
