@@ -286,18 +286,24 @@
         });
         
         // Handle hash changes (including on page load)
-        function handleHashChange() {
+        window.handleHashChange = function() {
             const hash = window.location.hash;
+            console.log('handleHashChange called, hash:', hash);
             
             if (hash === '#home') {
+                console.log('Loading home page');
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
             } else if (hash === '#upload') {
+                console.log('Loading upload page');
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
             } else if (hash.startsWith('#album/')) {
                 // Direct album link
                 const albumKey = decodeURIComponent(hash.substring(7));
+                console.log('Loading album:', albumKey);
                 window.currentAlbumToView = albumKey;
-                htmx.ajax('GET', '/templates/track-list.html', '#main-content');
+                htmx.ajax('GET', '/templates/track-list.html', '#main-content').then(() => {
+                    console.log('Track list loaded for album');
+                });
             } else if (hash.startsWith('#track/')) {
                 // Direct track link
                 const trackId = hash.substring(7);
@@ -313,11 +319,32 @@
         }
         
         // Listen for hash changes
-        window.addEventListener('hashchange', handleHashChange);
+        window.addEventListener('hashchange', () => {
+            console.log('hashchange event fired!');
+            window.handleHashChange();
+        });
+        
+        // Also catch clicks on album/track links
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.href) {
+                const url = new URL(link.href);
+                console.log('Link clicked:', url.hash);
+                if (url.hash.startsWith('#album/') || url.hash.startsWith('#track/')) {
+                    console.log('Album/track link clicked, hash:', url.hash);
+                    // If the hash is already the same, manually trigger the handler
+                    if (window.location.hash === url.hash) {
+                        console.log('Hash is the same, manually calling handler');
+                        window.handleHashChange();
+                    }
+                }
+            }
+        });
         
         // Load initial content based on URL
         document.addEventListener('DOMContentLoaded', () => {
-            handleHashChange();
+            console.log('DOMContentLoaded, calling handleHashChange');
+            window.handleHashChange();
             window.updateActiveNav(window.location.pathname);
             
             // Restore drawer state from localStorage
