@@ -250,13 +250,29 @@ class AudioPlayer {
       this.audioContext.resume();
     }
     
-    this.audio.play();
+    const playPromise = this.audio.play();
+    
+    if (playPromise !== undefined) {
+      return playPromise.then(() => {
+        this.isPlaying = true;
+        document.querySelector('.play-icon').style.display = 'none';
+        document.querySelector('.pause-icon').style.display = 'block';
+        
+        // Start periodic state saving
+        this.startStateSaving();
+      }).catch(error => {
+        console.log('Playback failed:', error);
+        this.isPlaying = false;
+        throw error;
+      });
+    }
+    
+    // Fallback for older browsers
     this.isPlaying = true;
     document.querySelector('.play-icon').style.display = 'none';
     document.querySelector('.pause-icon').style.display = 'block';
-    
-    // Start periodic state saving
     this.startStateSaving();
+    return Promise.resolve();
   }
   
   pause() {
@@ -417,17 +433,10 @@ class AudioPlayer {
             this.audio.currentTime = state.position;
           }
           
-          // Auto-play if it was playing before
+          // Note: Auto-play requires user interaction in modern browsers
+          // We'll restore the playing state visually but not actually play
           if (state.isPlaying) {
-            // Give user a moment to interact with page first
-            setTimeout(() => {
-              if (!this.isPlaying) {
-                this.play().catch(e => {
-                  // Auto-play might be blocked by browser
-                  console.log('Auto-play blocked:', e);
-                });
-              }
-            }, 500);
+            console.log('Track was playing before reload - click play to resume');
           }
         }, { once: true });
       }

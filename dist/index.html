@@ -165,16 +165,26 @@
         }
         
         // Handle hash changes (including on page load)
+        let currentLoadedPage = null;
         window.handleHashChange = function() {
             const hash = window.location.hash;
-            console.log('handleHashChange called, hash:', hash);
+            console.log('handleHashChange called, hash:', hash, 'currentLoadedPage:', currentLoadedPage);
+            
+            // Prevent reloading the same page
+            const pageType = hash.startsWith('#music') ? 'music' : hash.substring(1);
+            if (currentLoadedPage === pageType && pageType !== 'music') {
+                console.log('Page already loaded, skipping');
+                return;
+            }
             
             if (hash === '#home') {
                 console.log('Loading home page');
+                currentLoadedPage = 'home';
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
                 window.updateActiveNav('#home');
             } else if (hash === '#upload') {
                 console.log('Loading upload page');
+                currentLoadedPage = 'upload';
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
                 window.updateActiveNav('#upload');
             } else if (hash === '#music' || hash.startsWith('#music/')) {
@@ -186,6 +196,7 @@
                     window.currentPage = 1;
                 }
                 console.log('Loading music library, page:', window.currentPage);
+                currentLoadedPage = 'music';
                 
                 htmx.ajax('GET', '/templates/track-list.html', {
                     target: '#main-content',
@@ -197,6 +208,7 @@
                 const albumKey = decodeURIComponent(hash.substring(7));
                 console.log('Loading album:', albumKey);
                 window.currentAlbumToView = albumKey;
+                currentLoadedPage = 'music';
                 
                 // Load the music library page
                 htmx.ajax('GET', '/templates/track-list.html', {
@@ -209,6 +221,7 @@
                 const trackId = hash.substring(7);
                 console.log('Loading track:', trackId);
                 window.currentTrackToPlay = trackId;
+                currentLoadedPage = 'music';
                 
                 // Load the music library page
                 htmx.ajax('GET', '/templates/track-list.html', {
@@ -219,6 +232,7 @@
             } else {
                 // Default to home page
                 console.log('No specific hash match, loading home');
+                currentLoadedPage = 'home';
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
                 window.updateActiveNav('#home');
             }
@@ -231,14 +245,23 @@
         });
         
         // Initialize page
+        let pageInitialized = false;
         function initializePage() {
-            console.log('Initializing page');
+            if (pageInitialized) {
+                console.log('Page already initialized, skipping');
+                return;
+            }
+            pageInitialized = true;
+            
+            console.log('Initializing page, current hash:', window.location.hash);
             
             // Default to home page if no hash
             if (!window.location.hash || window.location.hash === '') {
+                console.log('No hash found, defaulting to home');
                 window.location.hash = '#home';
             } else {
                 // Handle the current hash
+                console.log('Hash found, handling:', window.location.hash);
                 window.handleHashChange();
             }
             
