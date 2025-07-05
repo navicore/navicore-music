@@ -57,6 +57,10 @@ export default {
         return await handleFileUpload(request, env);
       } else if (path === '/api/v1/upload/album' && method === 'POST') {
         return await handleAlbumUpload(request, env);
+      } else if (path.match(/^\/album\/.+$/) && method === 'GET') {
+        return await handleAlbumPage(request, env);
+      } else if (path.match(/^\/track\/.+$/) && method === 'GET') {
+        return await handleTrackPage(request, env);
       } else {
         return new Response('Not Found', { status: 404, headers: corsHeaders });
       }
@@ -582,4 +586,22 @@ async function handleAlbumUpload(request, env) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
+}
+async function handleAlbumPage(request, env) {
+  const url = new URL(request.url);
+  const albumKey = decodeURIComponent(url.pathname.substring(7));
+  const [artist, album] = albumKey.split("::");
+  
+  // For now, redirect to the main app with the album hash
+  // In a full implementation, this would render server-side HTML with Open Graph tags
+  return Response.redirect(`https://navicore.tech/#album/${encodeURIComponent(albumKey)}`, 302);
+}
+
+async function handleTrackPage(request, env) {
+  const url = new URL(request.url);
+  const trackId = url.pathname.substring(7);
+  
+  // For now, redirect to the main app with the track hash
+  // In a full implementation, this would render server-side HTML with Open Graph tags
+  return Response.redirect(`https://navicore.tech/#track/${trackId}`, 302);
 }

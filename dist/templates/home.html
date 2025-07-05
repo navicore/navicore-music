@@ -132,10 +132,8 @@
             
             const albumsHtml = recentAlbums.map(([key, album]) => `
                 <div class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer"
-                     hx-get="/templates/track-list.html" 
-                     hx-target="#main-content" 
-                     hx-push-url="/#album"
-                     hx-on::after-request="updateActiveNav('/'); setTimeout(() => setView('album'), 100);">
+                     onclick="navigateToAlbum('${key.replace(/'/g, "\\'")}')"
+                     data-album-key="${key.replace(/"/g, '&quot;')}">
                     <div class="card-body p-4">
                         <div class="aspect-square bg-base-300 rounded mb-2"></div>
                         <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>

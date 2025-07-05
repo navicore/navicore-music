@@ -175,7 +175,7 @@
         }
         
         // Handle navigation state
-        function updateActiveNav(path) {
+        window.updateActiveNav = function(path) {
             // Handle both regular paths and hash paths
             const currentPath = path || window.location.pathname + window.location.hash;
             
@@ -194,27 +194,93 @@
             });
         }
         
+        // Navigate to a specific album
+        window.navigateToAlbum = function(albumKey) {
+            // Store the album key for the music library to use
+            window.currentAlbumToView = albumKey;
+            
+            // Navigate to music page
+            htmx.ajax('GET', '/templates/track-list.html', {
+                target: '#main-content',
+                swap: 'innerHTML'
+            }).then(() => {
+                // Update URL and navigation
+                history.pushState({}, '', '/#album/' + encodeURIComponent(albumKey));
+                window.updateActiveNav('/');
+                
+                // After content loads, show the album
+                setTimeout(() => {
+                    if (typeof showAlbumDetails === 'function') {
+                        showAlbumDetails(albumKey);
+                    }
+                }, 100);
+            });
+        };
+        
+        // Navigate to a specific track
+        window.navigateToTrack = function(trackId) {
+            // Similar to album navigation
+            window.currentTrackToPlay = trackId;
+            
+            htmx.ajax('GET', '/templates/track-list.html', {
+                target: '#main-content',
+                swap: 'innerHTML'
+            }).then(() => {
+                history.pushState({}, '', '/#track/' + trackId);
+                window.updateActiveNav('/');
+                
+                // After content loads, play the track
+                setTimeout(() => {
+                    if (typeof playTrack === 'function') {
+                        playTrack(trackId);
+                    }
+                }, 100);
+            });
+        };
+        
         // Handle browser back/forward
         window.addEventListener('popstate', (event) => {
             const path = window.location.pathname;
-            updateActiveNav(path);
+            const hash = window.location.hash;
+            
+            if (hash.startsWith('#album/')) {
+                const albumKey = decodeURIComponent(hash.substring(7));
+                window.navigateToAlbum(albumKey);
+            } else if (hash.startsWith('#track/')) {
+                const trackId = hash.substring(7);
+                window.navigateToTrack(trackId);
+            }
+            
+            window.updateActiveNav(path);
         });
         
         // Update active nav after HTMX swaps
         document.body.addEventListener('htmx:afterSwap', (event) => {
             if (event.detail.target.id === 'main-content') {
                 const path = window.location.pathname;
-                updateActiveNav(path);
+                window.updateActiveNav(path);
             }
         });
         
         // Load initial content based on URL
         document.addEventListener('DOMContentLoaded', () => {
             const path = window.location.pathname;
-            if (path === '/#home' || window.location.hash === '#home') {
+            const hash = window.location.hash;
+            
+            if (path === '/#home' || hash === '#home') {
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
-            } else if (path === '/#upload' || window.location.hash === '#upload') {
+            } else if (path === '/#upload' || hash === '#upload') {
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
+            } else if (hash.startsWith('#album/')) {
+                // Direct album link
+                const albumKey = decodeURIComponent(hash.substring(7));
+                window.currentAlbumToView = albumKey;
+                htmx.ajax('GET', '/templates/track-list.html', '#main-content');
+            } else if (hash.startsWith('#track/')) {
+                // Direct track link
+                const trackId = hash.substring(7);
+                window.currentTrackToPlay = trackId;
+                htmx.ajax('GET', '/templates/track-list.html', '#main-content');
             } else if (path === '/' || path === '/index.html') {
                 // We're on the music page, initialize after content loads
                 setTimeout(() => {
@@ -224,7 +290,7 @@
                     }
                 }, 500);
             }
-            updateActiveNav(path);
+            window.updateActiveNav(path);
             
             // Restore drawer state from localStorage
             const drawerState = localStorage.getItem('drawer-state');
