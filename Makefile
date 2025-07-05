@@ -1,4 +1,4 @@
-.PHONY: all install dev test lint check clean help
+.PHONY: all install dev test lint check clean help build-wasm
 
 # Default target
 all: help
@@ -8,6 +8,7 @@ help:
 	@echo "Navicore Music - Development Commands"
 	@echo "===================================="
 	@echo "make install       - Install dependencies"
+	@echo "make build-wasm   - Build WASM frontend module"
 	@echo "make check        - Run all checks (lint + test)"
 	@echo "make lint         - Check code quality"
 	@echo "make test         - Run tests (currently placeholder)"
@@ -20,6 +21,17 @@ help:
 install:
 	@echo "Installing dependencies..."
 	npm install
+
+# Build WASM frontend
+build-wasm:
+	@echo "=== Building WASM frontend ==="
+	@command -v wasm-pack >/dev/null 2>&1 || { echo "wasm-pack not found. Install with: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh"; exit 1; }
+	@command -v rustc >/dev/null 2>&1 || { echo "Rust not found. Please install Rust from https://rustup.rs/"; exit 1; }
+	@echo "Building WASM module..."
+	@cd frontend && wasm-pack build --target web --out-dir ../dist/wasm
+	@echo "WASM build complete!"
+	@echo "Generated files:"
+	@ls -la dist/wasm/ | grep -E '\.(js|wasm|d\.ts)$$'
 
 # Run all checks (what CI runs)
 check: lint test
@@ -92,6 +104,9 @@ clean:
 	rm -rf node_modules
 	rm -rf test-build
 	rm -f package-lock.json
+	rm -rf dist/wasm/*.js dist/wasm/*.wasm dist/wasm/*.d.ts dist/wasm/package.json
+	rm -rf frontend/target
+	rm -rf frontend/pkg
 	@echo "Clean complete"
 
 # Run checks before committing
