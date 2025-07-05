@@ -57,6 +57,11 @@ export default {
         return await handleFileUpload(request, env);
       } else if (path === '/api/v1/upload/album' && method === 'POST') {
         return await handleAlbumUpload(request, env);
+      } else if (path === '/api/v1/upload/cover' && method === 'POST') {
+        return await handleCoverUpload(request, env);
+      } else if (path.match(/^\/api\/v1\/tracks\/[^\/]+\/cover$/) && method === 'GET') {
+        const id = path.split('/')[4];
+        return await handleGetCover(id, env, request);
       } else if (path.match(/^\/album\/.+$/) && method === 'GET') {
         return await handleAlbumPage(request, env);
       } else if (path.match(/^\/track\/.+$/) && method === 'GET') {
@@ -587,6 +592,114 @@ async function handleAlbumUpload(request, env) {
     });
   }
 }
+
+async function handleCoverUpload(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file');
+    
+    if (!file) {
+      return new Response(JSON.stringify({ 
+        error: 'No file provided' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid file type. Only JPEG, PNG, and WebP are allowed.' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Generate unique filename
+    const ext = file.name.split('.').pop();
+    const coverId = crypto.randomUUID();
+    const coverPath = `covers/${coverId}.${ext}`;
+    
+    // Upload to R2
+    await env.MUSIC_BUCKET.put(coverPath, file.stream(), {
+      httpMetadata: {
+        contentType: file.type,
+      },
+    });
+    
+    return new Response(JSON.stringify({
+      success: true,
+      path: coverPath,
+      message: 'Cover art uploaded successfully',
+    }), {
+      status: 201,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Cover upload error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Cover upload failed', 
+      details: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleGetCover(trackId, env, request) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET',
+  };
+  
+  try {
+    // Get track to find cover art path
+    const track = await env.DB.prepare(
+      'SELECT cover_art_path FROM tracks WHERE id = ?'
+    ).bind(trackId).first();
+    
+    if (!track || !track.cover_art_path) {
+      // Return 404 if no cover art
+      return new Response('Cover art not found', { 
+        status: 404, 
+        headers: corsHeaders 
+      });
+    }
+    
+    // Get the cover from R2
+    const object = await env.MUSIC_BUCKET.get(track.cover_art_path);
+    
+    if (!object) {
+      return new Response('Cover art file not found', { 
+        status: 404, 
+        headers: corsHeaders 
+      });
+    }
+    
+    // Return the image with proper headers
+    const headers = new Headers(object.httpMetadata || {});
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    
+    return new Response(object.body, { headers });
+  } catch (error) {
+    console.error('Get cover error:', error);
+    return new Response('Internal server error', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
 async function handleAlbumPage(request, env) {
   const url = new URL(request.url);
   const albumKey = decodeURIComponent(url.pathname.substring(7));
