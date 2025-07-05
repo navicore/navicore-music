@@ -11,7 +11,6 @@ class AudioPlayer {
     this.analyser = null;
     this.audioContext = null;
     this.source = null;
-    this.useWebAudioAPI = false; // Start with simple audio playback
     
     this.init();
   }
@@ -20,8 +19,7 @@ class AudioPlayer {
     this.createPlayerElement();
     this.attachEventListeners();
     this.applyTheme(this.currentTheme);
-    // Don't initialize audio context by default
-    // this.initAudioContext();
+    this.setupAudioRouting();
   }
   
   createPlayerElement() {
@@ -79,11 +77,6 @@ class AudioPlayer {
         
         <div class="player-section player-visual">
           <canvas id="visualizer"></canvas>
-          <button class="visualizer-toggle" onclick="audioPlayer.toggleVisualizer()" title="Toggle Visualizer">
-            <svg width="20" height="20" fill="currentColor">
-              <path d="M10 3v2a5 5 0 0 0 0 10v2a7 7 0 1 1 0-14zM10 8v4l3-2-3-2z"/>
-            </svg>
-          </button>
           <div class="vu-meter" style="display: none;">
             <div class="vu-needle"></div>
           </div>
@@ -103,33 +96,50 @@ class AudioPlayer {
     }
   }
   
+  setupAudioRouting() {
+    // Set up audio routing but don't connect until first play
+    this.audio.crossOrigin = "anonymous"; // Enable CORS for audio analysis
+    
+    // Initialize canvas
+    const canvas = document.getElementById('visualizer');
+    if (canvas) {
+      this.resizeCanvas();
+      window.addEventListener('resize', () => this.resizeCanvas());
+    }
+  }
+  
   initAudioContext() {
-    if (this.audioContext) return; // Already initialized
+    if (this.audioContext) return;
     
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Resume context if it's suspended (browser autoplay policy)
-      if (this.audioContext.state === 'suspended') {
-        this.audioContext.resume();
-      }
-      
-      // Create analyser and connect audio
       this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 2048;
+      this.analyser.fftSize = 256; // Smaller for better performance
+      this.analyser.smoothingTimeConstant = 0.8;
       
-      // Create source from audio element
+      // Create gain node for volume control
+      this.gainNode = this.audioContext.createGain();
+      
+      // Connect audio element to analyser and output
       this.source = this.audioContext.createMediaElementSource(this.audio);
       this.source.connect(this.analyser);
-      this.analyser.connect(this.audioContext.destination);
+      this.analyser.connect(this.gainNode);
+      this.gainNode.connect(this.audioContext.destination);
       
-      // Start visualizer if playing
-      if (this.isPlaying) {
-        this.startVisualizer();
-      }
+      // Start visualizer
+      this.startVisualizer();
     } catch (error) {
-      console.error('Failed to initialize audio context:', error);
-      this.useWebAudioAPI = false;
+      console.error('Audio context error:', error);
+    }
+  }
+  
+  resizeCanvas() {
+    const canvas = document.getElementById('visualizer');
+    if (canvas) {
+      // Set canvas size to match container
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
     }
   }
   
@@ -185,15 +195,20 @@ class AudioPlayer {
   }
   
   play() {
+    // Initialize audio context on first play (browser requirement)
+    if (!this.audioContext) {
+      this.initAudioContext();
+    }
+    
+    // Resume context if suspended
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
+    
     this.audio.play();
     this.isPlaying = true;
     document.querySelector('.play-icon').style.display = 'none';
     document.querySelector('.pause-icon').style.display = 'block';
-    
-    // Start visualizer if enabled
-    if (this.useWebAudioAPI && this.analyser && !this.visualizer) {
-      this.startVisualizer();
-    }
   }
   
   pause() {
@@ -281,59 +296,19 @@ class AudioPlayer {
     this.currentTheme = themeName;
     localStorage.setItem('player-theme', themeName);
     
-    // Initialize canvas
-    const canvas = document.getElementById('visualizer');
-    if (canvas) {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#001100';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#00ff00';
-      ctx.font = '14px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('Visualizer Off', canvas.width / 2, canvas.height / 2);
-    }
-    
     // Restart visualizer with new theme if active
-    if (this.visualizer && this.useWebAudioAPI) {
+    if (this.visualizer && this.analyser) {
       this.startVisualizer();
     }
   }
   
-  toggleVisualizer() {
-    this.useWebAudioAPI = !this.useWebAudioAPI;
-    const canvas = document.getElementById('visualizer');
-    const ctx = canvas.getContext('2d');
-    
-    if (this.useWebAudioAPI) {
-      // Enable Web Audio API and visualizer
-      if (!this.audioContext) {
-        this.initAudioContext();
-      }
-      if (this.isPlaying && this.analyser) {
-        this.startVisualizer();
-      }
-    } else {
-      // Disable visualizer
-      if (this.visualizer) {
-        this.visualizer.stop();
-        this.visualizer = null;
-      }
-      
-      // Clear canvas and show message
-      ctx.fillStyle = '#001100';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#00ff00';
-      ctx.font = '14px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('Visualizer Off', canvas.width / 2, canvas.height / 2);
-      ctx.textAlign = 'left';
-    }
-  }
-  
   startVisualizer() {
-    if (!this.useWebAudioAPI || !this.analyser) return;
+    if (!this.analyser) return;
+    
+    // Stop existing visualizer
+    if (this.visualizer) {
+      this.visualizer.stop();
+    }
     
     const canvas = document.getElementById('visualizer');
     
@@ -354,12 +329,13 @@ class AnalogOscilloscope {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.analyser = analyser;
-    this.bufferLength = analyser.frequencyBinCount;
+    this.bufferLength = analyser.fftSize;
     this.dataArray = new Uint8Array(this.bufferLength);
     this.animationId = null;
     
     this.resize();
-    window.addEventListener('resize', () => this.resize());
+    this.resizeHandler = () => this.resize();
+    window.addEventListener('resize', this.resizeHandler);
   }
   
   resize() {
