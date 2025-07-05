@@ -102,8 +102,10 @@
     let allTracks = [];
     let searchQuery = '';
     
-    // Load and display library
-    fetch('https://api.navicore.tech/api/v1/tracks')
+    // Initialize or restore view state
+    function initializeTrackList() {
+        // Load and display library
+        fetch('https://api.navicore.tech/api/v1/tracks')
         .then(res => res.json())
         .then(data => {
             allTracks = data.tracks;
@@ -120,6 +122,10 @@
                 </div>
             `;
         });
+    }
+    
+    // Call initialization
+    initializeTrackList();
     
     function renderLibrary() {
         const container = document.getElementById('library-container');
