@@ -96,16 +96,6 @@
         </form>
     </dialog>
 </div>
-
-<script>
-    let currentView = 'album';
-    let allTracks = [];
-    let searchQuery = '';
-    
-    // Initialize or restore view state
-    function initializeTrackList() {
-        // Load and display library
-        fetch('https://api.navicore.tech/api/v1/tracks')
         .then(res => res.json())
         .then(data => {
             allTracks = data.tracks;
@@ -541,5 +531,3 @@
             return (bytes / 1024).toFixed(1) + ' KB';
         }
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    }
-</script>

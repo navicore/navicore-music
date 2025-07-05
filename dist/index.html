@@ -128,6 +128,9 @@
     <!-- Load Audio Player -->
     <script src="/static/js/audio-player.js"></script>
     
+    <!-- Load Music Library Functions -->
+    <script src="/static/js/music-library.js"></script>
+    
     <script type="module">
         // Initialize WASM audio player when ready
         import init from '/wasm/navicore_music_frontend.js';
@@ -224,6 +227,16 @@
         document.body.addEventListener('htmx:afterSwap', (event) => {
             if (event.detail.target.id === 'main-content' && window.innerWidth < 1024) {
                 document.getElementById('drawer-toggle').checked = false;
+            }
+        });
+        
+        // Initialize track list when Music page loads
+        document.body.addEventListener('htmx:afterSettle', (event) => {
+            if (event.detail.target.id === 'main-content') {
+                // Check if we just loaded the track list template
+                if (document.getElementById('library-container')) {
+                    initializeTrackList();
+                }
             }
         });
     </script>
