@@ -98,12 +98,12 @@
                         </svg>
                         <span>Home</span>
                     </a>
-                    <a href="/" 
+                    <a href="#music" 
                        hx-get="/templates/track-list.html" 
                        hx-target="#main-content" 
-                       hx-push-url="/"
-                       class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-base-300"
-                       data-path="/">
+                       hx-push-url="#music"
+                       class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-300 transition-colors"
+                       data-path="#music">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
                         </svg>
@@ -164,16 +164,38 @@
             }
         });
         
-        // Handle URL fragment for view mode
+        // HTMX event handlers - the proper way
         document.body.addEventListener('htmx:afterSwap', (event) => {
-            if (event.detail.target.id === 'main-content' && window.location.hash === '#list') {
-                // If we have #list in URL, switch to list view after content loads
-                setTimeout(() => {
-                    const listButton = document.querySelector('[data-view="list"]');
-                    if (listButton) {
-                        listButton.click();
-                    }
-                }, 100);
+            // This fires after HTMX swaps content into the DOM
+            if (event.detail.target.id === 'main-content') {
+                const libraryContainer = document.getElementById('library-container');
+                if (libraryContainer && window.initializeTrackList) {
+                    console.log('Track list template detected, initializing...');
+                    window.initializeTrackList();
+                }
+                
+                // Auto-close drawer on mobile
+                if (window.innerWidth < 1024) {
+                    document.getElementById('drawer-toggle').checked = false;
+                }
+                
+                // Handle view mode from URL
+                if (window.location.hash === '#list') {
+                    setTimeout(() => {
+                        const listButton = document.querySelector('[data-view="list"]');
+                        if (listButton) {
+                            listButton.click();
+                        }
+                    }, 100);
+                }
+            }
+        });
+        
+        // Update active nav after content settles
+        document.body.addEventListener('htmx:afterSettle', (event) => {
+            if (event.detail.target.id === 'main-content') {
+                const path = window.location.pathname + window.location.hash;
+                window.updateActiveNav(path);
             }
         });
         
@@ -257,6 +279,21 @@
                 console.log('Loading upload page');
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
                 window.updateActiveNav('#upload');
+            } else if (hash === '#music' || hash.startsWith('#music/')) {
+                // Music library with optional pagination
+                if (hash.match(/#music\/page\/(\d+)/)) {
+                    const page = parseInt(hash.match(/#music\/page\/(\d+)/)[1]);
+                    window.currentPage = page;
+                } else {
+                    window.currentPage = 1;
+                }
+                console.log('Loading music library, page:', window.currentPage);
+                
+                htmx.ajax('GET', '/templates/track-list.html', {
+                    target: '#main-content',
+                    swap: 'innerHTML'
+                });
+                window.updateActiveNav('#music');
             } else if (hash.startsWith('#album/')) {
                 // Direct album link
                 const albumKey = decodeURIComponent(hash.substring(7));
@@ -268,7 +305,7 @@
                     target: '#main-content',
                     swap: 'innerHTML'
                 });
-                window.updateActiveNav('/');
+                window.updateActiveNav('#music');
             } else if (hash.startsWith('#track/')) {
                 // Direct track link
                 const trackId = hash.substring(7);
@@ -280,11 +317,12 @@
                     target: '#main-content',
                     swap: 'innerHTML'
                 });
-                window.updateActiveNav('/');
+                window.updateActiveNav('#music');
             } else {
-                // Default to music library
-                htmx.ajax('GET', '/templates/track-list.html', '#main-content');
-                window.updateActiveNav('/');
+                // Default to home page
+                console.log('No specific hash match, loading home');
+                htmx.ajax('GET', '/templates/home.html', '#main-content');
+                window.updateActiveNav('#home');
             }
         }
         
@@ -296,33 +334,19 @@
         
         // Remove the click event listener - let the browser handle hash navigation naturally
         
-        // Ensure we don't miss early HTMX events
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setupHtmxHandlers);
-        } else {
-            setupHtmxHandlers();
-        }
-        
-        function setupHtmxHandlers() {
-            // Set up HTMX event handlers
-            document.body.addEventListener('htmx:afterSettle', (event) => {
-                if (event.detail.target.id === 'main-content') {
-                    // Check if we just loaded the track list template
-                    const libraryContainer = document.getElementById('library-container');
-                    if (libraryContainer && !libraryContainer.dataset.initialized) {
-                        console.log('Music library detected, marking as initialized');
-                        libraryContainer.dataset.initialized = 'true';
-                        // The template's own script will handle initialization
-                    }
-                }
-            });
-        }
+        // Remove duplicate initialization - let the template handle it
         
         // Load initial content based on URL
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOMContentLoaded, calling handleHashChange');
-            window.handleHashChange();
-            window.updateActiveNav(window.location.pathname);
+            console.log('DOMContentLoaded, setting up initial page');
+            
+            // Default to home page if no hash
+            if (!window.location.hash || window.location.hash === '') {
+                window.location.hash = '#home';
+            } else {
+                // Handle the current hash
+                window.handleHashChange();
+            }
             
             // Restore drawer state from localStorage
             const drawerState = localStorage.getItem('drawer-state');
@@ -332,25 +356,11 @@
         });
         
         // Toggle drawer and save state
-        function toggleDrawer() {
+        window.toggleDrawer = function() {
             const drawerToggle = document.getElementById('drawer-toggle');
             drawerToggle.checked = !drawerToggle.checked;
             localStorage.setItem('drawer-state', drawerToggle.checked ? 'open' : 'closed');
         }
-        
-        // Auto-close drawer on mobile after navigation
-        document.body.addEventListener('htmx:afterSwap', (event) => {
-            if (event.detail.target.id === 'main-content' && window.innerWidth < 1024) {
-                document.getElementById('drawer-toggle').checked = false;
-            }
-        });
-        
-        // Auto-close drawer on mobile after navigation
-        document.body.addEventListener('htmx:afterSwap', (event) => {
-            if (event.detail.target.id === 'main-content' && window.innerWidth < 1024) {
-                document.getElementById('drawer-toggle').checked = false;
-            }
-        });
     </script>
 </body>
 </html>
