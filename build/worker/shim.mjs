@@ -173,8 +173,8 @@ async function handleCreateTrack(request, env) {
   
   await env.DB.prepare(`
     INSERT INTO tracks (id, title, artist, album, duration, file_path, 
-                       cover_art_path, tags, year, track_number, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       cover_art_path, year, track_number, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     id,
     track.title,
@@ -183,7 +183,6 @@ async function handleCreateTrack(request, env) {
     track.duration,
     track.file_path,
     track.cover_art_path || null,
-    track.tags || null,
     track.year || null,
     track.track_number || null,
     now,
@@ -523,7 +522,6 @@ async function handleAlbumUpload(request, env) {
       title: zipFile.name.replace(/\.zip$/i, '').replace(/[\-_]/g, ' ').trim(),
       artist: 'Unknown Artist',
       year: new Date().getFullYear(),
-      tags: null,
       cover: null,
     };
     
@@ -551,7 +549,6 @@ async function handleAlbumUpload(request, env) {
         duration: 0, // Would need to extract from audio file
         file_path: `${zipPath}#${audioFile.name}`, // Reference within ZIP
         cover_art_path: metadata.coverFile ? `${zipPath}#${metadata.coverFile.name}` : null,
-        tags: albumData.tags,
         year: albumData.year,
         track_number: trackInfo.trackNumber,
         created_at: timestamp,
@@ -561,8 +558,8 @@ async function handleAlbumUpload(request, env) {
       // Save to database
       await env.DB.prepare(`
         INSERT INTO tracks (id, title, artist, album, duration, file_path, 
-                           cover_art_path, tags, year, track_number, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                           cover_art_path, year, track_number, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         track.id,
         track.title,
@@ -571,7 +568,6 @@ async function handleAlbumUpload(request, env) {
         track.duration,
         track.file_path,
         track.cover_art_path,
-        track.tags,
         track.year,
         track.track_number,
         track.created_at,
