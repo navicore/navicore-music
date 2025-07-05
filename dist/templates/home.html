@@ -75,8 +75,8 @@
         <div class="card bg-secondary text-secondary-content cursor-pointer hover:shadow-xl transition-shadow"
              hx-get="/templates/upload.html" 
              hx-target="#main-content" 
-             hx-push-url="/#upload"
-             onclick="window.updateActiveNav('/#upload')">
+             hx-push-url="#upload"
+             onclick="window.updateActiveNav('#upload')">
             <div class="card-body text-center">
                 <h2 class="card-title justify-center text-2xl mb-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,7 +133,7 @@
             const albumsHtml = recentAlbums.map(([key, album]) => {
                 const encodedKey = encodeURIComponent(key);
                 return `
-                    <a href="/#album/${encodedKey}"
+                    <a href="#album/${encodedKey}"
                        class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer block"
                        oncontextmenu="event.preventDefault(); copyAlbumLink(decodeURIComponent('${encodedKey}'))"
                        title="Click to view album • Right-click to copy link">
