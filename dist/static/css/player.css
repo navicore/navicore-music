@@ -8,18 +8,18 @@
   right: 0;
   height: 25vh;
   min-height: 150px;
-  max-height: 250px;
+  max-height: min(250px, 100vh); /* Never exceed viewport height */
   background: var(--player-bg);
   border-top: 2px solid var(--player-border);
   display: flex;
   align-items: stretch;
   gap: 1rem;
   padding: 0.5rem;
-  padding-bottom: 0.5rem;
   transition: transform 0.3s ease;
   z-index: 1000;
   box-sizing: border-box;
-  transform: translateY(-2px); /* Lift player slightly to ensure visibility */
+  overflow: hidden; /* Prevent content from extending beyond player bounds */
+  contain: layout size; /* Optimize rendering and contain layout */
 }
 
 /* Hidden state */
@@ -187,6 +187,8 @@
   justify-content: center;
   gap: 1rem;
   margin-top: 0.5rem;
+  padding-bottom: 0.5rem; /* Ensure buttons have space at bottom */
+  flex-shrink: 0; /* Prevent controls from shrinking */
 }
 
 .control-btn {
@@ -239,6 +241,7 @@
   overflow: hidden;
   border-radius: 8px;
   min-width: 200px;
+  margin-bottom: 0.5rem; /* Ensure visualizer doesn't touch bottom edge */
 }
 
 
@@ -262,7 +265,7 @@
   .audio-player {
     height: 30vh;
     min-height: 180px;
-    transform: translateY(-2px); /* Maintain lift on smaller screens */
+    max-height: 33vh; /* Ensure it never takes more than 1/3 of viewport */
   }
   
   .player-visual {
@@ -278,9 +281,9 @@
 @media (max-width: 768px) {
   .audio-player {
     flex-direction: column;
-    height: 40vh;
-    min-height: 300px;
-    transform: translateY(-2px); /* Maintain lift on mobile */
+    height: 35vh;
+    min-height: 280px;
+    max-height: 40vh; /* Limit height on mobile */
   }
   
   .player-album {
@@ -326,6 +329,28 @@
   left: 50%;
   transform: translate(-50%, -50%);
   color: var(--player-secondary);
+}
+
+/* Extra safety for very small viewports */
+@media (max-height: 400px) {
+  .audio-player {
+    height: 120px;
+    min-height: 120px;
+    max-height: 120px;
+  }
+  
+  .album-art-container {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .track-title {
+    font-size: 1rem;
+  }
+  
+  .player-visual {
+    display: none; /* Hide visualizer on very short screens */
+  }
 }
 
 /* VU Meter Styles (for analog theme) */
