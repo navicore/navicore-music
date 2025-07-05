@@ -1,16 +1,11 @@
-use yew::prelude::{Html, function_component, html};
+use wasm_bindgen::prelude::*;
 
-#[function_component(App)]
-pub fn app() -> Html {
-    html! {
-        <div>
-            <h1>{ "Navicore Music" }</h1>
-            <p>{ "Welcome to the Navicore Music application!" }</p>
-        </div>
-    }
-}
+// Audio processing functions will go here
+// For now, just export an init function that does nothing
 
-#[wasm_bindgen::prelude::wasm_bindgen(start)]
-pub fn run_app() {
-    yew::Renderer::<App>::new().render();
+#[wasm_bindgen]
+pub fn init_audio() -> Result<(), JsValue> {
+    // Initialize audio processing
+    // This is where we'll set up the WASM audio engine
+    Ok(())
 }
