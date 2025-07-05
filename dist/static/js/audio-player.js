@@ -110,11 +110,13 @@ class AudioPlayer {
       
       // Show initial state
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#001100';
+      ctx.fillStyle = '#000805';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#00ff00';
+      ctx.fillStyle = '#00ff88';
       ctx.font = '14px monospace';
       ctx.textAlign = 'center';
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#00ff88';
       ctx.fillText('Waiting for audio...', canvas.width / 2, canvas.height / 2);
     }
   }
@@ -485,7 +487,7 @@ class AnalogOscilloscope {
     this.analyser.getByteTimeDomainData(this.dataArray);
     
     // Clear with slight persistence for phosphor effect
-    this.ctx.fillStyle = 'rgba(0, 17, 0, 0.1)';
+    this.ctx.fillStyle = 'rgba(0, 8, 5, 0.1)';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
     // Draw grid
@@ -493,9 +495,9 @@ class AnalogOscilloscope {
     
     // Draw waveform
     this.ctx.lineWidth = 2;
-    this.ctx.strokeStyle = '#00ff00';
-    this.ctx.shadowBlur = 10;
-    this.ctx.shadowColor = '#00ff00';
+    this.ctx.strokeStyle = '#00ff88';
+    this.ctx.shadowBlur = 15;
+    this.ctx.shadowColor = '#00ff88';
     
     this.ctx.beginPath();
     
@@ -520,7 +522,7 @@ class AnalogOscilloscope {
   }
   
   drawGrid() {
-    this.ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
+    this.ctx.strokeStyle = 'rgba(0, 255, 136, 0.08)';
     this.ctx.lineWidth = 1;
     this.ctx.shadowBlur = 0;
     
