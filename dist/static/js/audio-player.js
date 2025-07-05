@@ -118,27 +118,41 @@ class AudioPlayer {
   }
   
   initAudioContext() {
-    if (this.audioContext) return;
+    if (this.audioContext) {
+      console.log('Audio context already exists');
+      return;
+    }
+    
+    console.log('Initializing audio context...');
     
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 256; // Smaller for better performance
-      this.analyser.smoothingTimeConstant = 0.8;
+      console.log('Audio context created:', this.audioContext.state);
       
-      // Create gain node for volume control
-      this.gainNode = this.audioContext.createGain();
-      
-      // Connect audio element to analyser and output
-      this.source = this.audioContext.createMediaElementSource(this.audio);
-      this.source.connect(this.analyser);
-      this.analyser.connect(this.gainNode);
-      this.gainNode.connect(this.audioContext.destination);
+      // Only create source if we haven't already
+      if (!this.source) {
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 256;
+        
+        // Create source from audio element (can only be done once!)
+        this.source = this.audioContext.createMediaElementSource(this.audio);
+        console.log('Audio source created');
+        
+        // Connect directly to destination first
+        this.source.connect(this.audioContext.destination);
+        
+        // Also connect to analyser for visualization
+        this.source.connect(this.analyser);
+        
+        console.log('Audio routing complete');
+      }
       
       // Start visualizer
       this.startVisualizer();
     } catch (error) {
       console.error('Audio context error:', error);
+      // Fallback: ensure audio still plays
+      this.audio.play().catch(e => console.error('Playback error:', e));
     }
   }
   
@@ -178,7 +192,11 @@ class AudioPlayer {
   }
   
   loadTrack(track) {
+    console.log('Loading track:', track.title);
     this.currentTrack = track;
+    
+    // Important: Set crossOrigin before setting src
+    this.audio.crossOrigin = "anonymous";
     this.audio.src = `https://api.navicore.tech/api/v1/tracks/${track.id}/stream`;
     
     // Update UI
