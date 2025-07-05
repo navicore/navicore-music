@@ -8,6 +8,8 @@ class AudioPlayer {
     this.visualizer = null;
     this.analyser = null;
     this.audioContext = null;
+    this.source = null;
+    this.useWebAudioAPI = false; // Start with simple audio playback
     
     this.init();
   }
@@ -16,7 +18,8 @@ class AudioPlayer {
     this.createPlayerElement();
     this.attachEventListeners();
     this.applyTheme(this.currentTheme);
-    this.initAudioContext();
+    // Don't initialize audio context by default
+    // this.initAudioContext();
   }
   
   createPlayerElement() {
@@ -74,6 +77,11 @@ class AudioPlayer {
         
         <div class="player-section player-visual">
           <canvas id="visualizer"></canvas>
+          <button class="visualizer-toggle" onclick="audioPlayer.toggleVisualizer()" title="Toggle Visualizer">
+            <svg width="20" height="20" fill="currentColor">
+              <path d="M10 3v2a5 5 0 0 0 0 10v2a7 7 0 1 1 0-14zM10 8v4l3-2-3-2z"/>
+            </svg>
+          </button>
           <div class="vu-meter" style="display: none;">
             <div class="vu-needle"></div>
           </div>
@@ -97,12 +105,22 @@ class AudioPlayer {
     this.audio.addEventListener('play', () => {
       if (!this.audioContext) {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.analyser = this.audioContext.createAnalyser();
-        this.analyser.fftSize = 2048;
         
-        const source = this.audioContext.createMediaElementSource(this.audio);
-        source.connect(this.analyser);
-        this.analyser.connect(this.audioContext.destination);
+        // Resume context if it's suspended (browser autoplay policy)
+        if (this.audioContext.state === 'suspended') {
+          this.audioContext.resume();
+        }
+        
+        // Only create analyser if we haven't already
+        if (!this.source) {
+          this.analyser = this.audioContext.createAnalyser();
+          this.analyser.fftSize = 2048;
+          
+          // Create source only once per audio element
+          this.source = this.audioContext.createMediaElementSource(this.audio);
+          this.source.connect(this.analyser);
+          this.analyser.connect(this.audioContext.destination);
+        }
         
         this.startVisualizer();
       }
@@ -227,13 +245,60 @@ class AudioPlayer {
     this.currentTheme = themeName;
     localStorage.setItem('player-theme', themeName);
     
-    // Restart visualizer with new theme
-    if (this.visualizer) {
+    // Initialize canvas
+    const canvas = document.getElementById('visualizer');
+    if (canvas) {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#001100';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff00';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Visualizer Off', canvas.width / 2, canvas.height / 2);
+    }
+    
+    // Restart visualizer with new theme if active
+    if (this.visualizer && this.useWebAudioAPI) {
       this.startVisualizer();
     }
   }
   
+  toggleVisualizer() {
+    this.useWebAudioAPI = !this.useWebAudioAPI;
+    const canvas = document.getElementById('visualizer');
+    const ctx = canvas.getContext('2d');
+    
+    if (this.useWebAudioAPI) {
+      // Enable Web Audio API and visualizer
+      if (!this.audioContext) {
+        this.initAudioContext();
+      }
+      if (this.isPlaying && this.analyser) {
+        this.startVisualizer();
+      }
+    } else {
+      // Disable visualizer
+      if (this.visualizer) {
+        this.visualizer.stop();
+        this.visualizer = null;
+      }
+      
+      // Clear canvas and show message
+      ctx.fillStyle = '#001100';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff00';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Visualizer Off', canvas.width / 2, canvas.height / 2);
+      ctx.textAlign = 'left';
+    }
+  }
+  
   startVisualizer() {
+    if (!this.useWebAudioAPI || !this.analyser) return;
+    
     const canvas = document.getElementById('visualizer');
     
     if (this.currentTheme === 'analog-lab') {
