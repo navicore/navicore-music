@@ -324,9 +324,11 @@
         
         // HTMX event handlers - the proper way
         document.body.addEventListener('htmx:afterSwap', (event) => {
+            console.log('HTMX afterSwap fired, target:', event.detail.target.id);
             // This fires after HTMX swaps content into the DOM
             if (event.detail.target.id === 'main-content') {
                 const libraryContainer = document.getElementById('library-container');
+                console.log('Library container found:', !!libraryContainer, 'initializeTrackList available:', !!window.initializeTrackList);
                 if (libraryContainer && window.initializeTrackList) {
                     console.log('Track list template detected, initializing...');
                     window.initializeTrackList();
