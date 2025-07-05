@@ -141,130 +141,9 @@
         });
     </script>
     
-    <script type="module">
-        // Initialize WASM audio player when ready
-        import init from '/wasm/navicore_music_frontend.js';
-        
-        async function initializePlayer() {
-            try {
-                await init();
-                console.log('WASM initialized successfully');
-                // TODO: Initialize audio player component
-            } catch (error) {
-                console.error('Failed to initialize WASM:', error);
-            }
-        }
-        
-        // Configure HTMX to use our API
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.detail.headers['Content-Type'] = 'application/json';
-            // Update API URLs to use our backend
-            if (event.detail.path.startsWith('/api/')) {
-                event.detail.path = 'https://api.navicore.tech' + event.detail.path;
-            }
-        });
-        
-        // HTMX event handlers - the proper way
-        document.body.addEventListener('htmx:afterSwap', (event) => {
-            // This fires after HTMX swaps content into the DOM
-            if (event.detail.target.id === 'main-content') {
-                const libraryContainer = document.getElementById('library-container');
-                if (libraryContainer && window.initializeTrackList) {
-                    console.log('Track list template detected, initializing...');
-                    window.initializeTrackList();
-                }
-                
-                // Auto-close drawer on mobile
-                if (window.innerWidth < 1024) {
-                    document.getElementById('drawer-toggle').checked = false;
-                }
-                
-                // Handle view mode from URL
-                if (window.location.hash === '#list') {
-                    setTimeout(() => {
-                        const listButton = document.querySelector('[data-view="list"]');
-                        if (listButton) {
-                            listButton.click();
-                        }
-                    }, 100);
-                }
-            }
-        });
-        
-        // Update active nav after content settles
-        document.body.addEventListener('htmx:afterSettle', (event) => {
-            if (event.detail.target.id === 'main-content') {
-                const path = window.location.pathname + window.location.hash;
-                window.updateActiveNav(path);
-            }
-        });
-        
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializePlayer);
-        } else {
-            initializePlayer();
-        }
-        
-        // Handle navigation state
-        window.updateActiveNav = function(path) {
-            // Handle both regular paths and hash paths
-            const currentPath = path || window.location.pathname + window.location.hash;
-            
-            document.querySelectorAll('.nav-link').forEach(link => {
-                const linkPath = link.dataset.path;
-                // Check if paths match, considering both / and /#home as home
-                const isActive = (linkPath === currentPath) || 
-                               (linkPath === '/' && currentPath === '/index.html') ||
-                               (linkPath === '/#home' && (currentPath === '/#home' || currentPath === '/home.html'));
-                
-                if (isActive) {
-                    link.classList.add('bg-base-300');
-                } else {
-                    link.classList.remove('bg-base-300');
-                }
-            });
-        }
-        
-        // Navigate to a specific album
-        window.navigateToAlbum = function(albumKey) {
-            console.log('navigateToAlbum called with:', albumKey);
-            // Update URL using hash
-            window.location.hash = 'album/' + encodeURIComponent(albumKey);
-            // The hashchange event will handle the rest
-        };
-        
-        // Navigate to a specific track  
-        window.navigateToTrack = function(trackId) {
-            console.log('navigateToTrack called with:', trackId);
-            // Update URL using hash
-            window.location.hash = 'track/' + trackId;
-            // The hashchange event will handle the rest
-        };
-        
-        // Handle browser back/forward
-        window.addEventListener('popstate', (event) => {
-            const path = window.location.pathname;
-            const hash = window.location.hash;
-            
-            if (hash.startsWith('#album/')) {
-                const albumKey = decodeURIComponent(hash.substring(7));
-                window.navigateToAlbum(albumKey);
-            } else if (hash.startsWith('#track/')) {
-                const trackId = hash.substring(7);
-                window.navigateToTrack(trackId);
-            }
-            
-            window.updateActiveNav(path);
-        });
-        
-        // Update active nav after HTMX swaps
-        document.body.addEventListener('htmx:afterSwap', (event) => {
-            if (event.detail.target.id === 'main-content') {
-                const path = window.location.pathname;
-                window.updateActiveNav(path);
-            }
-        });
+    <script>
+        // Main app initialization - runs immediately
+        console.log('Main app script starting');
         
         // Handle hash changes (including on page load)
         window.handleHashChange = function() {
@@ -332,11 +211,7 @@
             window.handleHashChange();
         });
         
-        // Remove the click event listener - let the browser handle hash navigation naturally
-        
-        // Remove duplicate initialization - let the template handle it
-        
-        // Load initial content based on URL
+        // Initialize page
         function initializePage() {
             console.log('Initializing page');
             
@@ -355,13 +230,37 @@
             }
         }
         
-        // Initialize when DOM is ready - handle both cases
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializePage);
-        } else {
-            // DOM already loaded (happens with module scripts)
-            initializePage();
-        }
+        // Navigate to a specific album
+        window.navigateToAlbum = function(albumKey) {
+            console.log('navigateToAlbum called with:', albumKey);
+            // Update URL using hash
+            window.location.hash = 'album/' + encodeURIComponent(albumKey);
+            // The hashchange event will handle the rest
+        };
+        
+        // Navigate to a specific track  
+        window.navigateToTrack = function(trackId) {
+            console.log('navigateToTrack called with:', trackId);
+            // Update URL using hash
+            window.location.hash = 'track/' + trackId;
+            // The hashchange event will handle the rest
+        };
+        
+        // Handle browser back/forward
+        window.addEventListener('popstate', (event) => {
+            const path = window.location.pathname;
+            const hash = window.location.hash;
+            
+            if (hash.startsWith('#album/')) {
+                const albumKey = decodeURIComponent(hash.substring(7));
+                window.navigateToAlbum(albumKey);
+            } else if (hash.startsWith('#track/')) {
+                const trackId = hash.substring(7);
+                window.navigateToTrack(trackId);
+            }
+            
+            window.updateActiveNav(path);
+        });
         
         // Toggle drawer and save state
         window.toggleDrawer = function() {
@@ -369,6 +268,102 @@
             drawerToggle.checked = !drawerToggle.checked;
             localStorage.setItem('drawer-state', drawerToggle.checked ? 'open' : 'closed');
         }
+        
+        // Run initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+        } else {
+            initializePage();
+        }
+    </script>
+    
+    <script type="module">
+        console.log('Module script starting');
+        
+        // Initialize WASM audio player when ready
+        import init from '/wasm/navicore_music_frontend.js';
+        
+        async function initializePlayer() {
+            try {
+                await init();
+                console.log('WASM initialized successfully');
+                // TODO: Initialize audio player component
+            } catch (error) {
+                console.error('Failed to initialize WASM:', error);
+            }
+        }
+        
+        // Configure HTMX to use our API
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['Content-Type'] = 'application/json';
+            // Update API URLs to use our backend
+            if (event.detail.path.startsWith('/api/')) {
+                event.detail.path = 'https://api.navicore.tech' + event.detail.path;
+            }
+        });
+        
+        // HTMX event handlers - the proper way
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            // This fires after HTMX swaps content into the DOM
+            if (event.detail.target.id === 'main-content') {
+                const libraryContainer = document.getElementById('library-container');
+                if (libraryContainer && window.initializeTrackList) {
+                    console.log('Track list template detected, initializing...');
+                    window.initializeTrackList();
+                }
+                
+                // Auto-close drawer on mobile
+                if (window.innerWidth < 1024) {
+                    document.getElementById('drawer-toggle').checked = false;
+                }
+                
+                // Handle view mode from URL
+                if (window.location.hash === '#list') {
+                    setTimeout(() => {
+                        const listButton = document.querySelector('[data-view="list"]');
+                        if (listButton) {
+                            listButton.click();
+                        }
+                    }, 100);
+                }
+            }
+        });
+        
+        // Update active nav after content settles
+        document.body.addEventListener('htmx:afterSettle', (event) => {
+            if (event.detail.target.id === 'main-content') {
+                const path = window.location.pathname + window.location.hash;
+                window.updateActiveNav(path);
+            }
+        });
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePlayer);
+        } else {
+            initializePlayer();
+        }
+        
+        // Update navigation function (defined only once)
+        window.updateActiveNav = function(path) {
+            // Handle both regular paths and hash paths
+            const currentPath = path || window.location.pathname + window.location.hash;
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const linkPath = link.dataset.path;
+                // Check if paths match, considering both / and /#home as home
+                const isActive = (linkPath === currentPath) || 
+                               (linkPath === '/' && currentPath === '/index.html') ||
+                               (linkPath === '/#home' && (currentPath === '/#home' || currentPath === '/home.html'));
+                
+                if (isActive) {
+                    link.classList.add('bg-base-300');
+                } else {
+                    link.classList.remove('bg-base-300');
+                }
+            });
+        }
+        
     </script>
 </body>
 </html>
