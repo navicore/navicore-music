@@ -162,7 +162,7 @@
     // Copy album link function (if not already defined)
     if (typeof copyAlbumLink === 'undefined') {
         window.copyAlbumLink = function(albumKey) {
-            const url = `https://navicore.tech/#album/${encodeURIComponent(albumKey)}`;
+            const url = `${window.location.origin}/#album/${encodeURIComponent(albumKey)}`;
             
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(url).then(() => {

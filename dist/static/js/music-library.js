@@ -513,7 +513,7 @@ function showAlbumDetails(albumKey) {
 
 // Copy album link to clipboard
 function copyAlbumLink(albumKey) {
-    const url = `https://navicore.tech/#album/${encodeURIComponent(albumKey)}`;
+    const url = `${window.location.origin}/#album/${encodeURIComponent(albumKey)}`;
     
     // Try to use the clipboard API
     if (navigator.clipboard) {
@@ -529,7 +529,7 @@ function copyAlbumLink(albumKey) {
 
 // Copy track link to clipboard
 function copyTrackLink(trackId) {
-    const url = `https://navicore.tech/#track/${trackId}`;
+    const url = `${window.location.origin}/#track/${trackId}`;
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(() => {
