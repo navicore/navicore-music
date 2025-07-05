@@ -1,0 +1,347 @@
+/* Audio Player Styles */
+
+/* Base Player Structure */
+.audio-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 25vh;
+  min-height: 180px;
+  max-height: 300px;
+  background: var(--player-bg);
+  border-top: 2px solid var(--player-border);
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 2fr minmax(240px, 1.5fr);
+  gap: 1rem;
+  padding: 1rem;
+  transition: transform 0.3s ease;
+  z-index: 1000;
+}
+
+/* Hidden state */
+.audio-player.hidden {
+  transform: translateY(100%);
+}
+
+/* Minimized state */
+.audio-player.minimized {
+  height: 60px;
+  min-height: 60px;
+}
+
+/* Theme: Analog Laboratory */
+.audio-player[data-theme="analog-lab"] {
+  --player-bg: #2a2520;
+  --player-border: #8B7355;
+  --player-primary: #8B7355;
+  --player-secondary: #F0E68C;
+  --player-accent: #00FF00;
+  --player-text: #F0E68C;
+  --player-shadow: rgba(240, 230, 140, 0.2);
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 115, 85, 0.03) 2px,
+      rgba(139, 115, 85, 0.03) 4px
+    );
+}
+
+/* Player Sections */
+.player-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+/* Album Section */
+.player-album {
+  align-items: center;
+}
+
+.album-art-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.album-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--player-primary);
+}
+
+/* Analog theme album styling */
+[data-theme="analog-lab"] .album-art-container {
+  border: 3px solid var(--player-primary);
+  box-shadow: 
+    0 0 20px var(--player-shadow),
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="analog-lab"] .album-art-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+}
+
+/* Info Section */
+.player-info {
+  padding: 0 1rem;
+}
+
+.track-display {
+  margin-bottom: 1rem;
+}
+
+.track-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--player-text);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-artist {
+  font-size: 1rem;
+  color: var(--player-secondary);
+  opacity: 0.8;
+}
+
+/* Analog theme text styling */
+[data-theme="analog-lab"] .track-title,
+[data-theme="analog-lab"] .track-artist {
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 3px var(--player-shadow);
+}
+
+/* Progress Bar */
+.progress-container {
+  margin: 1rem 0;
+  position: relative;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--player-accent);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+/* Analog theme progress styling */
+[data-theme="analog-lab"] .progress-bar {
+  border: 1px solid var(--player-primary);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="analog-lab"] .progress-fill {
+  background: linear-gradient(to right, var(--player-accent), var(--player-secondary));
+  box-shadow: 0 0 10px var(--player-accent);
+}
+
+/* Time Display */
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--player-secondary);
+  font-family: monospace;
+  margin-top: 0.5rem;
+}
+
+/* Transport Controls */
+.transport-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.control-btn {
+  background: none;
+  border: none;
+  color: var(--player-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.control-btn:hover {
+  color: var(--player-accent);
+  transform: scale(1.1);
+}
+
+.control-btn.play-pause {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--player-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Analog theme button styling */
+[data-theme="analog-lab"] .control-btn {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+[data-theme="analog-lab"] .control-btn.play-pause {
+  background: radial-gradient(circle at 30% 30%, var(--player-primary), #4a3929);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="analog-lab"] .control-btn.play-pause:active {
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Visualizer Section */
+.player-visual {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+#visualizer {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+/* Analog theme visualizer styling */
+[data-theme="analog-lab"] #visualizer {
+  border: 2px solid var(--player-primary);
+  box-shadow: 
+    inset 0 0 20px rgba(0, 255, 0, 0.1),
+    0 0 20px rgba(0, 0, 0, 0.5);
+  background: radial-gradient(ellipse at center, #001100, #000000);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .audio-player {
+    grid-template-columns: 140px 1fr minmax(180px, 1fr);
+    height: 30vh;
+  }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  .audio-player {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto auto;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    max-height: none;
+  }
+  
+  .player-album {
+    grid-row: 1;
+    padding: 2rem 0;
+  }
+  
+  .album-art-container {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .player-info {
+    grid-row: 2;
+    text-align: center;
+    padding: 1rem 2rem;
+  }
+  
+  .player-visual {
+    grid-row: 3;
+    height: 30vh;
+    margin: 1rem;
+  }
+  
+  .transport-controls {
+    grid-row: 4;
+    padding: 2rem;
+  }
+}
+
+/* Minimize/Expand Button */
+.player-toggle {
+  position: absolute;
+  top: -40px;
+  right: 1rem;
+  background: var(--player-bg);
+  border: 2px solid var(--player-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  color: var(--player-text);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.player-toggle:hover {
+  background: var(--player-primary);
+}
+
+/* Loading State */
+.player-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--player-secondary);
+}
+
+/* VU Meter Styles (for analog theme) */
+.vu-meter {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  width: 60px;
+  height: 40px;
+  background: linear-gradient(to bottom, #1a1a1a, #0a0a0a);
+  border: 2px solid var(--player-primary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.vu-needle {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  height: 30px;
+  background: var(--player-secondary);
+  transform-origin: bottom center;
+  transform: rotate(0deg);
+  transition: transform 0.1s ease-out;
+  box-shadow: 0 0 4px var(--player-secondary);
+}

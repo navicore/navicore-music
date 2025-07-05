@@ -352,13 +352,23 @@
     }
     
     function playTrack(trackId) {
-        console.log('Play track:', trackId);
-        // TODO: Implement track playback
+        // Find the track data
+        const track = allTracks.find(t => t.id === trackId);
+        if (track && window.audioPlayer) {
+            window.audioPlayer.loadTrack(track);
+            window.audioPlayer.play();
+        }
     }
     
     function playAlbum(albumKey) {
-        console.log('Play album:', albumKey);
-        // TODO: Implement album playback
+        const album = albums[albumKey];
+        if (album && album.tracks.length > 0 && window.audioPlayer) {
+            // Play the first track of the album
+            const firstTrack = album.tracks[0];
+            window.audioPlayer.loadTrack(firstTrack);
+            window.audioPlayer.play();
+            // TODO: Queue the rest of the album
+        }
     }
     
     let albums = {};
