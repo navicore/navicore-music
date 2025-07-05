@@ -14,8 +14,8 @@
   display: flex;
   align-items: stretch;
   gap: 1rem;
-  padding: 0.75rem;
-  padding-bottom: 0.5rem;
+  padding: 0.5rem;
+  padding-bottom: 0;
   transition: transform 0.3s ease;
   z-index: 1000;
   box-sizing: border-box;
