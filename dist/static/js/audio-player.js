@@ -2,6 +2,8 @@
 class AudioPlayer {
   constructor() {
     this.currentTrack = null;
+    this.playlist = [];
+    this.currentIndex = -1;
     this.audio = new Audio();
     this.isPlaying = false;
     this.currentTheme = localStorage.getItem('player-theme') || 'analog-lab';
@@ -102,29 +104,33 @@ class AudioPlayer {
   }
   
   initAudioContext() {
-    this.audio.addEventListener('play', () => {
-      if (!this.audioContext) {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Resume context if it's suspended (browser autoplay policy)
-        if (this.audioContext.state === 'suspended') {
-          this.audioContext.resume();
-        }
-        
-        // Only create analyser if we haven't already
-        if (!this.source) {
-          this.analyser = this.audioContext.createAnalyser();
-          this.analyser.fftSize = 2048;
-          
-          // Create source only once per audio element
-          this.source = this.audioContext.createMediaElementSource(this.audio);
-          this.source.connect(this.analyser);
-          this.analyser.connect(this.audioContext.destination);
-        }
-        
+    if (this.audioContext) return; // Already initialized
+    
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Resume context if it's suspended (browser autoplay policy)
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+      
+      // Create analyser and connect audio
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 2048;
+      
+      // Create source from audio element
+      this.source = this.audioContext.createMediaElementSource(this.audio);
+      this.source.connect(this.analyser);
+      this.analyser.connect(this.audioContext.destination);
+      
+      // Start visualizer if playing
+      if (this.isPlaying) {
         this.startVisualizer();
       }
-    });
+    } catch (error) {
+      console.error('Failed to initialize audio context:', error);
+      this.useWebAudioAPI = false;
+    }
   }
   
   attachEventListeners() {
@@ -183,6 +189,11 @@ class AudioPlayer {
     this.isPlaying = true;
     document.querySelector('.play-icon').style.display = 'none';
     document.querySelector('.pause-icon').style.display = 'block';
+    
+    // Start visualizer if enabled
+    if (this.useWebAudioAPI && this.analyser && !this.visualizer) {
+      this.startVisualizer();
+    }
   }
   
   pause() {
@@ -193,13 +204,38 @@ class AudioPlayer {
   }
   
   previous() {
-    // TODO: Implement playlist functionality
-    console.log('Previous track');
+    if (this.playlist.length === 0) return;
+    
+    // If more than 3 seconds into the song, restart it
+    if (this.audio.currentTime > 3) {
+      this.audio.currentTime = 0;
+      return;
+    }
+    
+    // Otherwise go to previous track
+    this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
+    this.loadTrack(this.playlist[this.currentIndex]);
+    if (this.isPlaying) {
+      this.play();
+    }
   }
   
   next() {
-    // TODO: Implement playlist functionality
-    console.log('Next track');
+    if (this.playlist.length === 0) return;
+    
+    this.currentIndex = (this.currentIndex + 1) % this.playlist.length;
+    this.loadTrack(this.playlist[this.currentIndex]);
+    if (this.isPlaying) {
+      this.play();
+    }
+  }
+  
+  setPlaylist(tracks, startIndex = 0) {
+    this.playlist = tracks;
+    this.currentIndex = startIndex;
+    if (tracks.length > 0) {
+      this.loadTrack(tracks[startIndex]);
+    }
   }
   
   seek(event, offsetSeconds) {

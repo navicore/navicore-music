@@ -352,10 +352,11 @@
     }
     
     function playTrack(trackId) {
-        // Find the track data
-        const track = allTracks.find(t => t.id === trackId);
-        if (track && window.audioPlayer) {
-            window.audioPlayer.loadTrack(track);
+        // Find the track data and its position in all tracks
+        const trackIndex = allTracks.findIndex(t => t.id === trackId);
+        if (trackIndex !== -1 && window.audioPlayer) {
+            // Set all tracks as playlist starting from this track
+            window.audioPlayer.setPlaylist(allTracks, trackIndex);
             window.audioPlayer.play();
         }
     }
@@ -363,11 +364,9 @@
     function playAlbum(albumKey) {
         const album = albums[albumKey];
         if (album && album.tracks.length > 0 && window.audioPlayer) {
-            // Play the first track of the album
-            const firstTrack = album.tracks[0];
-            window.audioPlayer.loadTrack(firstTrack);
+            // Set album tracks as playlist
+            window.audioPlayer.setPlaylist(album.tracks, 0);
             window.audioPlayer.play();
-            // TODO: Queue the rest of the album
         }
     }
     
