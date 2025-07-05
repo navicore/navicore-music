@@ -206,6 +206,14 @@
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
             } else if (path === '/upload.html') {
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
+            } else if (path === '/' || path === '/index.html') {
+                // We're on the music page, initialize after content loads
+                setTimeout(() => {
+                    const libraryContainer = document.getElementById('library-container');
+                    if (libraryContainer && typeof initializeTrackList === 'function') {
+                        initializeTrackList();
+                    }
+                }, 500);
             }
             updateActiveNav(path);
             
@@ -234,8 +242,17 @@
         document.body.addEventListener('htmx:afterSettle', (event) => {
             if (event.detail.target.id === 'main-content') {
                 // Check if we just loaded the track list template
-                if (document.getElementById('library-container')) {
-                    initializeTrackList();
+                const libraryContainer = document.getElementById('library-container');
+                if (libraryContainer) {
+                    console.log('Music library detected, initializing...');
+                    // Small delay to ensure DOM is ready
+                    setTimeout(() => {
+                        if (typeof initializeTrackList === 'function') {
+                            initializeTrackList();
+                        } else {
+                            console.error('initializeTrackList function not found');
+                        }
+                    }, 100);
                 }
             }
         });

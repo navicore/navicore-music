@@ -99,3 +99,22 @@
         </form>
     </dialog>
 </div>
+
+<!-- Initialize library when this template loads -->
+<script>
+    // Ensure the library loads even if the main event handler misses it
+    (function() {
+        const tryInit = () => {
+            if (typeof initializeTrackList === 'function') {
+                console.log('Initializing track list from template');
+                initializeTrackList();
+            } else {
+                console.log('Waiting for music-library.js to load...');
+                setTimeout(tryInit, 100);
+            }
+        };
+        
+        // Start trying after a small delay
+        setTimeout(tryInit, 100);
+    })();
+</script>
