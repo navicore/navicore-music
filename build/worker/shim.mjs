@@ -412,7 +412,7 @@ async function handleFileUpload(request, env) {
       album: trackMetadata.album || 'Unknown Album',
       duration: trackMetadata.duration || 0, // TODO: Extract from file
       file_path: filePath,
-      cover_art_path: null,
+      cover_art_path: trackMetadata.cover_art_path || null,
       genre: trackMetadata.genre || null,
       year: trackMetadata.year || new Date().getFullYear(),
       track_number: trackMetadata.track_number || null,
