@@ -2,6 +2,7 @@
 // This implements the API endpoints using D1 and R2
 
 import { parseZipFile, extractMetadataFromFiles, parseTrackInfoFromFilename } from './zip-utils.mjs';
+import { setAlbumTags, setTrackTags, searchByTag, getPopularTags } from './tag-operations.mjs';
 
 export default {
   async fetch(request, env, ctx) {
@@ -62,6 +63,8 @@ export default {
       } else if (path.match(/^\/api\/v1\/tracks\/[^\/]+\/cover$/) && method === 'GET') {
         const id = path.split('/')[4];
         return await handleGetCover(id, env, request);
+      } else if (path === '/api/v1/tags' && method === 'GET') {
+        return await handleGetTags(request, env);
       } else if (path.match(/^\/album\/.+$/) && method === 'GET') {
         return await handleAlbumPage(request, env);
       } else if (path.match(/^\/track\/.+$/) && method === 'GET') {
@@ -119,6 +122,20 @@ async function handleListTracks(request, env) {
   
   if (searchQuery) {
     const searchTerm = `%${searchQuery}%`;
+    
+    // Check if it's a tag search (prefixed with #)
+    if (searchQuery.startsWith('#')) {
+      const tagName = searchQuery.substring(1);
+      const tagResults = await searchByTag(env, tagName, 'track');
+      return new Response(JSON.stringify({
+        tracks: tagResults.tracks || [],
+        count: tagResults.tracks ? tagResults.tracks.length : 0,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Regular search in title, artist, album
     query = `
       SELECT * FROM tracks 
       WHERE title LIKE ? OR artist LIKE ? OR album LIKE ?
@@ -156,7 +173,7 @@ async function handleCreateTrack(request, env) {
   
   await env.DB.prepare(`
     INSERT INTO tracks (id, title, artist, album, duration, file_path, 
-                       cover_art_path, genre, year, track_number, created_at, updated_at)
+                       cover_art_path, tags, year, track_number, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     id,
@@ -166,7 +183,7 @@ async function handleCreateTrack(request, env) {
     track.duration,
     track.file_path,
     track.cover_art_path || null,
-    track.genre || null,
+    track.tags || null,
     track.year || null,
     track.track_number || null,
     now,
@@ -413,18 +430,17 @@ async function handleFileUpload(request, env) {
       duration: trackMetadata.duration || 0, // TODO: Extract from file
       file_path: filePath,
       cover_art_path: trackMetadata.cover_art_path || null,
-      genre: trackMetadata.genre || null,
       year: trackMetadata.year || new Date().getFullYear(),
       track_number: trackMetadata.track_number || null,
       created_at: now,
       updated_at: now,
     };
     
-    // Save to database
+    // Save to database (without tags column)
     await env.DB.prepare(`
       INSERT INTO tracks (id, title, artist, album, duration, file_path, 
-                         cover_art_path, genre, year, track_number, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         cover_art_path, year, track_number, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       track.id,
       track.title,
@@ -433,12 +449,16 @@ async function handleFileUpload(request, env) {
       track.duration,
       track.file_path,
       track.cover_art_path,
-      track.genre,
       track.year,
       track.track_number,
       track.created_at,
       track.updated_at
     ).run();
+    
+    // Handle tags separately using normalized tag system
+    if (trackMetadata.tags) {
+      await setTrackTags(env, track.id, trackMetadata.tags);
+    }
     
     return new Response(JSON.stringify({
       success: true,
@@ -503,7 +523,7 @@ async function handleAlbumUpload(request, env) {
       title: zipFile.name.replace(/\.zip$/i, '').replace(/[\-_]/g, ' ').trim(),
       artist: 'Unknown Artist',
       year: new Date().getFullYear(),
-      genre: null,
+      tags: null,
       cover: null,
     };
     
@@ -531,7 +551,7 @@ async function handleAlbumUpload(request, env) {
         duration: 0, // Would need to extract from audio file
         file_path: `${zipPath}#${audioFile.name}`, // Reference within ZIP
         cover_art_path: metadata.coverFile ? `${zipPath}#${metadata.coverFile.name}` : null,
-        genre: albumData.genre,
+        tags: albumData.tags,
         year: albumData.year,
         track_number: trackInfo.trackNumber,
         created_at: timestamp,
@@ -541,7 +561,7 @@ async function handleAlbumUpload(request, env) {
       // Save to database
       await env.DB.prepare(`
         INSERT INTO tracks (id, title, artist, album, duration, file_path, 
-                           cover_art_path, genre, year, track_number, created_at, updated_at)
+                           cover_art_path, tags, year, track_number, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         track.id,
@@ -551,7 +571,7 @@ async function handleAlbumUpload(request, env) {
         track.duration,
         track.file_path,
         track.cover_art_path,
-        track.genre,
+        track.tags,
         track.year,
         track.track_number,
         track.created_at,
@@ -717,4 +737,35 @@ async function handleTrackPage(request, env) {
   // For now, redirect to the main app with the track hash
   // In a full implementation, this would render server-side HTML with Open Graph tags
   return Response.redirect(`https://navicore.tech/#track/${trackId}`, 302);
+}
+
+async function handleGetTags(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  
+  try {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '20');
+    
+    const tags = await getPopularTags(env, limit);
+    
+    return new Response(JSON.stringify({
+      tags: tags,
+      count: tags.length,
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Get tags error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to fetch tags', 
+      details: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 }
