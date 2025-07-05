@@ -55,19 +55,20 @@
 
     <!-- Quick Actions -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="card bg-primary text-primary-content cursor-pointer hover:shadow-xl transition-shadow"
+        <div class="card cursor-pointer hover:shadow-xl transition-shadow"
+             style="background: linear-gradient(135deg, #00cc66 0%, #00aa55 100%); color: #000000;"
              hx-get="/templates/track-list.html" 
              hx-target="#main-content" 
              hx-push-url="/"
-             hx-on::after-request="updateActiveNav('/')">
+             onclick="window.updateActiveNav('/')">
             <div class="card-body text-center">
-                <h2 class="card-title justify-center text-2xl mb-4">
+                <h2 class="card-title justify-center text-2xl mb-4" style="color: #000000;">
                     <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
                     </svg>
                     Browse Music
                 </h2>
-                <p>Explore your music library</p>
+                <p style="color: #000000;">Explore your music library</p>
             </div>
         </div>
 
@@ -75,7 +76,7 @@
              hx-get="/templates/upload.html" 
              hx-target="#main-content" 
              hx-push-url="/upload.html"
-             hx-on::after-request="updateActiveNav('/upload.html')">
+             onclick="window.updateActiveNav('/upload.html')">
             <div class="card-body text-center">
                 <h2 class="card-title justify-center text-2xl mb-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
