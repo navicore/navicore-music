@@ -25,7 +25,7 @@
         
         <div class="drawer-content">
             <!-- Main Layout Grid -->
-            <div class="min-h-screen grid grid-rows-[1fr_auto] lg:grid-rows-1 lg:grid-cols-1 xl:grid-cols-[1fr_24rem]">
+            <div class="min-h-screen">
                 
                 <!-- Main Content Area -->
                 <main class="flex-1 p-4 lg:p-8 overflow-y-auto" style="padding-bottom: 250px;">
@@ -36,38 +36,6 @@
                         </div>
                     </div>
                 </main>
-                
-                <!-- Now Playing Panel - Desktop only -->
-                <aside class="hidden xl:block bg-base-200 p-6 overflow-y-auto">
-                    <h2 class="text-xl font-bold mb-4">Now Playing</h2>
-                    <div id="now-playing-panel">
-                        <!-- Album art -->
-                        <div class="aspect-square bg-base-300 rounded-lg mb-4">
-                            <img id="now-playing-art" class="w-full h-full object-cover rounded-lg" />
-                        </div>
-                        
-                        <!-- Track info -->
-                        <div class="mb-4">
-                            <h3 id="now-playing-title" class="text-lg font-semibold">No track playing</h3>
-                            <p id="now-playing-artist" class="text-base-content/70">Select a track to play</p>
-                        </div>
-                        
-                        <!-- Queue -->
-                        <div>
-                            <h4 class="text-sm font-semibold mb-2 text-base-content/70">Up Next</h4>
-                            <div id="play-queue" class="space-y-2">
-                                <!-- Queue items load here -->
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-                
-                <!-- Mobile Player Bar -->
-                <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-base-300 border-t border-base-content/10">
-                    <div id="mobile-player" class="p-2">
-                        <!-- Mini player for mobile -->
-                    </div>
-                </div>
             </div>
         </div>
         

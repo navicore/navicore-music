@@ -6,7 +6,7 @@
     <div id="tracks-upload" class="card bg-base-200">
         <div class="card-body">
             <h2 class="card-title mb-4">Upload Album</h2>
-            <form id="tracks-upload-form" class="space-y-4">
+            <form id="tracks-upload-form" class="space-y-4" method="post" enctype="multipart/form-data">
                 <!-- Album Metadata -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-control">
@@ -217,13 +217,17 @@
     // Individual tracks upload handler
     document.getElementById('tracks-upload-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+        console.log('Upload form submitted');
         
-        const artist = document.getElementById('artist-input').value;
-        const album = document.getElementById('album-input').value;
-        const genre = document.getElementById('genre-input').value;
-        const year = document.getElementById('year-input').value;
-        const coverInput = document.querySelector('input[name="cover"]');
-        const coverFile = coverInput.files[0];
+        try {
+            const artist = document.getElementById('artist-input').value;
+            const album = document.getElementById('album-input').value;
+            const genre = document.getElementById('genre-input').value;
+            const year = document.getElementById('year-input').value;
+            const coverInput = document.querySelector('input[name="cover"]');
+            const coverFile = coverInput.files[0];
+            
+            console.log('Form data:', { artist, album, genre, year, hasCover: !!coverFile, trackCount: selectedTracks.length });
         
         const tracksToUpload = selectedTracks.filter(t => !t.isLarge);
         
@@ -309,6 +313,17 @@
             message: `Successfully uploaded ${uploadedCount} of ${tracksToUpload.length} tracks`,
             tracks: uploadedTracks
         });
+        
+        // Reset for next upload
+        selectedTracks = [];
+        document.getElementById('track-files').value = '';
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('Upload failed: ' + error.message);
+            // Reset UI
+            document.getElementById('tracks-upload').classList.remove('hidden');
+            document.getElementById('upload-progress').classList.add('hidden');
+        }
     });
     
     function updateProgress(current, total, trackName) {
