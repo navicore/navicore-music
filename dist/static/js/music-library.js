@@ -16,6 +16,22 @@ function initializeTrackList() {
     .then(data => {
         allTracks = data.tracks;
         renderLibrary();
+        
+        // Check if we need to navigate to a specific album or track
+        const hash = window.location.hash;
+        if (hash.startsWith('#album/')) {
+            const albumKey = decodeURIComponent(hash.substring(7));
+            showAlbumDetails(albumKey);
+        } else if (hash.startsWith('#track/')) {
+            const trackId = hash.substring(7);
+            playTrack(trackId);
+        } else if (window.currentAlbumToView) {
+            showAlbumDetails(window.currentAlbumToView);
+            window.currentAlbumToView = null;
+        } else if (window.currentTrackToPlay) {
+            playTrack(window.currentTrackToPlay);
+            window.currentTrackToPlay = null;
+        }
     })
     .catch(err => {
         console.error('Failed to load library:', err);
@@ -143,6 +159,11 @@ function renderLibrary() {
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </button>
+                            <button class="btn btn-sm btn-ghost" onclick="copyAlbumLink('${key.replace(/'/g, "\\\\'")}')" title="Copy shareable link">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
                                 </svg>
                             </button>
                         </div>
@@ -451,4 +472,110 @@ function formatFileSize(bytes) {
         return (bytes / 1024).toFixed(1) + ' KB';
     }
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// Show details for a specific album
+function showAlbumDetails(albumKey) {
+    // First ensure we're in album view
+    setView('album');
+    
+    // Filter tracks to show only this album
+    const [artist, album] = albumKey.split('::');
+    searchQuery = ''; // Clear any existing search
+    
+    // Scroll to the album if it exists
+    setTimeout(() => {
+        const albumCards = document.querySelectorAll('.card');
+        albumCards.forEach(card => {
+            const cardTitle = card.querySelector('.card-title');
+            const cardArtist = card.querySelector('.text-base-content\\/70');
+            if (cardTitle && cardArtist && 
+                cardTitle.textContent === album && 
+                cardArtist.textContent === artist) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Add a highlight effect
+                card.classList.add('ring-2', 'ring-primary');
+                setTimeout(() => {
+                    card.classList.remove('ring-2', 'ring-primary');
+                }, 2000);
+            }
+        });
+    }, 100);
+}
+
+// Copy album link to clipboard
+function copyAlbumLink(albumKey) {
+    const url = `https://navicore.tech/#album/${encodeURIComponent(albumKey)}`;
+    
+    // Try to use the clipboard API
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('Album link copied to clipboard!');
+        }).catch(err => {
+            fallbackCopyTextToClipboard(url);
+        });
+    } else {
+        fallbackCopyTextToClipboard(url);
+    }
+}
+
+// Copy track link to clipboard
+function copyTrackLink(trackId) {
+    const url = `https://navicore.tech/#track/${trackId}`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('Track link copied to clipboard!');
+        }).catch(err => {
+            fallbackCopyTextToClipboard(url);
+        });
+    } else {
+        fallbackCopyTextToClipboard(url);
+    }
+}
+
+// Fallback copy method for older browsers
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.width = "2em";
+    textArea.style.height = "2em";
+    textArea.style.padding = "0";
+    textArea.style.border = "none";
+    textArea.style.outline = "none";
+    textArea.style.boxShadow = "none";
+    textArea.style.background = "transparent";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showToast('Link copied to clipboard!');
+    } catch (err) {
+        showToast('Failed to copy link');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+// Show a toast notification
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-top toast-center';
+    toast.innerHTML = `
+        <div class="alert alert-success">
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
