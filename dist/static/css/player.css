@@ -7,15 +7,14 @@
   left: 0;
   right: 0;
   height: 25vh;
-  min-height: 200px;
-  max-height: 300px;
+  min-height: 150px;
+  max-height: 250px;
   background: var(--player-bg);
   border-top: 2px solid var(--player-border);
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) 2fr minmax(240px, 1.5fr);
+  display: flex;
+  align-items: stretch;
   gap: 1rem;
   padding: 1rem;
-  padding-bottom: 1.5rem; /* Extra padding at bottom */
   transition: transform 0.3s ease;
   z-index: 1000;
   box-sizing: border-box;
@@ -61,7 +60,9 @@
 
 /* Album Section */
 .player-album {
+  flex: 0 0 auto;
   align-items: center;
+  justify-content: center;
 }
 
 .album-art-container {
@@ -102,7 +103,9 @@
 
 /* Info Section */
 .player-info {
+  flex: 1 1 auto;
   padding: 0 1rem;
+  min-width: 0; /* Allow text truncation */
 }
 
 .track-display {
@@ -229,28 +232,13 @@
 
 /* Visualizer Section */
 .player-visual {
+  flex: 0 0 300px;
   position: relative;
   overflow: hidden;
   border-radius: 8px;
+  min-width: 200px;
 }
 
-.visualizer-toggle {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--player-primary);
-  border-radius: 4px;
-  padding: 0.25rem;
-  color: var(--player-text);
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.visualizer-toggle:hover {
-  opacity: 1;
-}
 
 #visualizer {
   width: 100%;
@@ -270,45 +258,40 @@
 /* Responsive Design */
 @media (max-width: 1024px) {
   .audio-player {
-    grid-template-columns: 140px 1fr minmax(180px, 1fr);
     height: 30vh;
-  }
-}
-
-@media (max-width: 768px) and (orientation: portrait) {
-  .audio-player {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto auto;
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for mobile */
-    max-height: none;
-  }
-  
-  .player-album {
-    grid-row: 1;
-    padding: 2rem 0;
-  }
-  
-  .album-art-container {
-    width: 200px;
-    height: 200px;
-  }
-  
-  .player-info {
-    grid-row: 2;
-    text-align: center;
-    padding: 1rem 2rem;
+    min-height: 180px;
   }
   
   .player-visual {
-    grid-row: 3;
-    height: 30vh;
-    margin: 1rem;
+    flex: 0 0 200px;
   }
   
-  .transport-controls {
-    grid-row: 4;
-    padding: 2rem;
+  .album-art-container {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .audio-player {
+    flex-direction: column;
+    height: 40vh;
+    min-height: 300px;
+  }
+  
+  .player-album {
+    display: none; /* Hide album art on small screens */
+  }
+  
+  .player-info {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  
+  .player-visual {
+    flex: 0 0 100px;
+    width: 100%;
+    margin-top: 0.5rem;
   }
 }
 
