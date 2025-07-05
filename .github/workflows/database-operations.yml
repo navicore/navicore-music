@@ -1,0 +1,186 @@
+name: Database Operations
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Database operation to perform'
+        required: true
+        type: choice
+        options:
+          - provision-fresh
+          - run-migrations
+          - backup
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+        default: production
+      confirm:
+        description: 'Type "CONFIRM" to proceed with destructive operations'
+        required: false
+        type: string
+
+jobs:
+  database-operation:
+    name: Execute Database Operation
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Wrangler
+        run: npm install -g wrangler
+      
+      - name: Validate destructive operations
+        if: github.event.inputs.operation == 'provision-fresh'
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "CONFIRM" ]; then
+            echo "❌ Destructive operation requires confirmation!"
+            echo "Please type 'CONFIRM' in the confirmation field."
+            exit 1
+          fi
+      
+      - name: Backup existing database
+        if: github.event.inputs.operation == 'backup' || github.event.inputs.operation == 'provision-fresh'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "📦 Creating database backup..."
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="backup_${TIMESTAMP}.sql"
+          
+          # Export the database
+          wrangler d1 export navicore-music-db --output=$BACKUP_FILE
+          
+          # Upload to R2 for safekeeping
+          wrangler r2 object put navicore-music-files/backups/$BACKUP_FILE --file=$BACKUP_FILE
+          
+          echo "✅ Backup created: backups/$BACKUP_FILE"
+      
+      - name: Provision fresh database
+        if: github.event.inputs.operation == 'provision-fresh'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🗑️ Dropping all tables..."
+          
+          # Get list of tables
+          TABLES=$(wrangler d1 execute navicore-music-db --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%';" --json | jq -r '.result[].results[].name' 2>/dev/null || echo "")
+          
+          # Drop each table
+          for TABLE in $TABLES; do
+            echo "Dropping table: $TABLE"
+            wrangler d1 execute navicore-music-db --command="DROP TABLE IF EXISTS $TABLE;"
+          done
+          
+          echo "📝 Creating fresh schema..."
+          
+          # Determine which schema to use
+          if [ -f "schema-v3.sql" ]; then
+            SCHEMA_FILE="schema-v3.sql"
+          elif [ -f "schema.sql" ]; then
+            SCHEMA_FILE="schema.sql"
+          else
+            echo "❌ No schema file found!"
+            exit 1
+          fi
+          
+          echo "Using schema: $SCHEMA_FILE"
+          
+          # Execute the schema file
+          wrangler d1 execute navicore-music-db --file=$SCHEMA_FILE
+          
+          echo "✅ Database provisioned with fresh schema"
+      
+      - name: Run migrations
+        if: github.event.inputs.operation == 'run-migrations'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🔄 Running database migrations..."
+          
+          # Create migrations tracking table if it doesn't exist
+          wrangler d1 execute navicore-music-db --command="
+            CREATE TABLE IF NOT EXISTS migrations (
+              id INTEGER PRIMARY KEY,
+              filename TEXT UNIQUE NOT NULL,
+              applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );"
+          
+          # Get list of applied migrations
+          APPLIED=$(wrangler d1 execute navicore-music-db --command="SELECT filename FROM migrations;" --json | jq -r '.result[].results[].filename' 2>/dev/null || echo "")
+          
+          # Run each migration file in order
+          for MIGRATION in migrations/*.sql; do
+            if [ -f "$MIGRATION" ]; then
+              FILENAME=$(basename "$MIGRATION")
+              
+              # Check if already applied
+              if echo "$APPLIED" | grep -q "^$FILENAME$"; then
+                echo "⏭️ Skipping already applied: $FILENAME"
+              else
+                echo "▶️ Applying migration: $FILENAME"
+                
+                # Execute the migration
+                wrangler d1 execute navicore-music-db --file="$MIGRATION"
+                
+                # Record the migration
+                wrangler d1 execute navicore-music-db --command="INSERT INTO migrations (filename) VALUES ('$FILENAME');"
+                
+                echo "✅ Applied: $FILENAME"
+              fi
+            fi
+          done
+          
+          echo "✅ All migrations completed"
+      
+      - name: Verify database state
+        if: github.event.inputs.operation != 'backup'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🔍 Verifying database state..."
+          
+          # List all tables
+          echo "Tables:"
+          wrangler d1 execute navicore-music-db --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;" --json | jq -r '.result[].results[].name' || echo "No tables found"
+          
+          # Check for specific expected tables
+          EXPECTED_TABLES="tracks albums tags album_tags track_tags playlists users"
+          MISSING_TABLES=""
+          
+          for TABLE in $EXPECTED_TABLES; do
+            if ! wrangler d1 execute navicore-music-db --command="SELECT name FROM sqlite_master WHERE type='table' AND name='$TABLE';" --json | jq -e '.result[].results[0]' > /dev/null 2>&1; then
+              MISSING_TABLES="$MISSING_TABLES $TABLE"
+            fi
+          done
+          
+          if [ -n "$MISSING_TABLES" ]; then
+            echo "⚠️ Warning: Missing expected tables:$MISSING_TABLES"
+          else
+            echo "✅ All expected tables present"
+          fi
+      
+      - name: Summary
+        run: |
+          echo "📊 Operation Summary"
+          echo "==================="
+          echo "Operation: ${{ github.event.inputs.operation }}"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Timestamp: $(date)"
+          echo "==================="
