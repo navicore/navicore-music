@@ -52,7 +52,7 @@ export default {
         return await handleDeleteTrack(id, env);
       } else if (path.match(/^\/api\/v1\/tracks\/[^\/]+\/stream$/) && method === 'GET') {
         const id = path.split('/')[4];
-        return await handleGetStreamUrl(id, env);
+        return await handleGetStreamUrl(id, env, request);
       } else if (path === '/api/v1/upload/file' && method === 'POST') {
         return await handleFileUpload(request, env);
       } else if (path === '/api/v1/upload/album' && method === 'POST') {
@@ -230,28 +230,95 @@ async function handleDeleteTrack(id, env) {
   });
 }
 
-async function handleGetStreamUrl(trackId, env) {
+function getAudioContentType(filePath) {
+  const ext = filePath.split('.').pop().toLowerCase();
+  const mimeTypes = {
+    'mp3': 'audio/mpeg',
+    'flac': 'audio/flac',
+    'ogg': 'audio/ogg',
+    'oga': 'audio/ogg',
+    'wav': 'audio/wav',
+    'm4a': 'audio/mp4',
+    'aac': 'audio/aac',
+    'opus': 'audio/opus',
+    'webm': 'audio/webm'
+  };
+  return mimeTypes[ext] || 'audio/mpeg';
+}
+
+async function handleGetStreamUrl(trackId, env, request) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers': 'Range, Content-Type',
+    'Access-Control-Expose-Headers': 'Content-Length, Content-Range',
+  };
+
   // Get track file path
-  const track = await env.DB.prepare('SELECT file_path FROM tracks WHERE id = ?')
+  const track = await env.DB.prepare('SELECT file_path, title FROM tracks WHERE id = ?')
     .bind(trackId)
     .first();
   
   if (!track) {
-    return new Response('Track not found', { status: 404 });
+    return new Response('Track not found', { 
+      status: 404,
+      headers: corsHeaders 
+    });
   }
   
-  // Generate presigned URL for R2
-  // For now, return a placeholder URL
-  // In production, you would use R2's presigned URL functionality
-  const expiresIn = 3600; // 1 hour
-  const url = `https://r2.navicore.tech/${track.file_path}?expires=${Date.now() + expiresIn * 1000}`;
-  
-  return new Response(JSON.stringify({
-    url,
-    expires_in: expiresIn,
-  }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  try {
+    // Get the audio file from R2
+    const object = await env.MUSIC_BUCKET.get(track.file_path);
+    
+    if (!object) {
+      return new Response('Audio file not found', { 
+        status: 404,
+        headers: corsHeaders 
+      });
+    }
+    
+    // Handle range requests for audio streaming
+    const range = request.headers.get('Range');
+    if (range) {
+      const bytes = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(bytes[0], 10);
+      const end = bytes[1] ? parseInt(bytes[1], 10) : object.size - 1;
+      const contentLength = end - start + 1;
+      
+      const slicedObject = await env.MUSIC_BUCKET.get(track.file_path, {
+        range: { offset: start, length: contentLength }
+      });
+      
+      return new Response(slicedObject.body, {
+        status: 206,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': getAudioContentType(track.file_path),
+          'Content-Length': contentLength.toString(),
+          'Content-Range': `bytes ${start}-${end}/${object.size}`,
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
+    }
+    
+    // Return full file
+    return new Response(object.body, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': object.size.toString(),
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
+  } catch (error) {
+    console.error('Stream error:', error);
+    return new Response('Error streaming audio', { 
+      status: 500,
+      headers: corsHeaders 
+    });
+  }
 }
 
 async function handleFileUpload(request, env) {
