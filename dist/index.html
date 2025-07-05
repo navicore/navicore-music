@@ -145,6 +145,26 @@
         // Main app initialization - runs immediately
         console.log('Main app script starting');
         
+        // Update navigation function
+        window.updateActiveNav = function(path) {
+            // Handle both regular paths and hash paths
+            const currentPath = path || window.location.pathname + window.location.hash;
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const linkPath = link.dataset.path;
+                // Check if paths match, considering both / and /#home as home
+                const isActive = (linkPath === currentPath) || 
+                               (linkPath === '/' && currentPath === '/index.html') ||
+                               (linkPath === '/#home' && (currentPath === '/#home' || currentPath === '/home.html'));
+                
+                if (isActive) {
+                    link.classList.add('bg-base-300');
+                } else {
+                    link.classList.remove('bg-base-300');
+                }
+            });
+        }
+        
         // Handle hash changes (including on page load)
         window.handleHashChange = function() {
             const hash = window.location.hash;
@@ -344,25 +364,6 @@
             initializePlayer();
         }
         
-        // Update navigation function (defined only once)
-        window.updateActiveNav = function(path) {
-            // Handle both regular paths and hash paths
-            const currentPath = path || window.location.pathname + window.location.hash;
-            
-            document.querySelectorAll('.nav-link').forEach(link => {
-                const linkPath = link.dataset.path;
-                // Check if paths match, considering both / and /#home as home
-                const isActive = (linkPath === currentPath) || 
-                               (linkPath === '/' && currentPath === '/index.html') ||
-                               (linkPath === '/#home' && (currentPath === '/#home' || currentPath === '/home.html'));
-                
-                if (isActive) {
-                    link.classList.add('bg-base-300');
-                } else {
-                    link.classList.remove('bg-base-300');
-                }
-            });
-        }
         
     </script>
 </body>
