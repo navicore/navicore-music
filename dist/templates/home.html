@@ -130,20 +130,24 @@
                 .slice(-6)
                 .reverse();
             
-            const albumsHtml = recentAlbums.map(([key, album]) => `
-                <a href="/#album/${encodeURIComponent(key)}"
-                   class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer block"
-                   onclick="event.preventDefault(); window.navigateToAlbum('${key.replace(/'/g, "\\'")}')"
-                   oncontextmenu="event.preventDefault(); copyAlbumLink('${key.replace(/'/g, "\\'")}')"
-                   data-album-key="${key.replace(/"/g, '&quot;')}"
-                   title="Right-click to copy link">
-                    <div class="card-body p-4">
-                        <div class="aspect-square bg-base-300 rounded mb-2"></div>
-                        <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
-                        <p class="text-xs opacity-70">${album.artist}</p>
-                    </div>
-                </a>
-            `).join('');
+            const albumsHtml = recentAlbums.map(([key, album]) => {
+                const encodedKey = encodeURIComponent(key);
+                const escapedKey = key.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                return `
+                    <a href="/#album/${encodedKey}"
+                       class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer block"
+                       onclick="event.preventDefault(); window.navigateToAlbum(decodeURIComponent('${encodedKey}'))"
+                       oncontextmenu="event.preventDefault(); copyAlbumLink(decodeURIComponent('${encodedKey}'))"
+                       data-album-key="${key.replace(/"/g, '&quot;')}"
+                       title="Right-click to copy link">
+                        <div class="card-body p-4">
+                            <div class="aspect-square bg-base-300 rounded mb-2"></div>
+                            <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
+                            <p class="text-xs opacity-70">${album.artist}</p>
+                        </div>
+                    </a>
+                `;
+            }).join('');
             
             document.getElementById('recent-albums').innerHTML = albumsHtml || 
                 '<p class="col-span-full text-center text-base-content/50">No albums yet</p>';
