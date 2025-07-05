@@ -337,8 +337,8 @@
         // Remove duplicate initialization - let the template handle it
         
         // Load initial content based on URL
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOMContentLoaded, setting up initial page');
+        function initializePage() {
+            console.log('Initializing page');
             
             // Default to home page if no hash
             if (!window.location.hash || window.location.hash === '') {
@@ -353,7 +353,15 @@
             if (drawerState === 'closed') {
                 document.getElementById('drawer-toggle').checked = false;
             }
-        });
+        }
+        
+        // Initialize when DOM is ready - handle both cases
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+        } else {
+            // DOM already loaded (happens with module scripts)
+            initializePage();
+        }
         
         // Toggle drawer and save state
         window.toggleDrawer = function() {
