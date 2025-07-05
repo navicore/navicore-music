@@ -196,8 +196,8 @@
         
         // Navigate to a specific album
         window.navigateToAlbum = function(albumKey) {
-            // Update URL
-            history.pushState({}, '', '/#album/' + encodeURIComponent(albumKey));
+            // Update URL using hash
+            window.location.hash = 'album/' + encodeURIComponent(albumKey);
             
             // Check if we're already on the music page
             const libraryContainer = document.getElementById('library-container');
@@ -224,8 +224,8 @@
         
         // Navigate to a specific track
         window.navigateToTrack = function(trackId) {
-            // Update URL
-            history.pushState({}, '', '/#track/' + trackId);
+            // Update URL using hash
+            window.location.hash = 'track/' + trackId;
             
             // Check if we're already on the music page
             const libraryContainer = document.getElementById('library-container');

@@ -136,7 +136,7 @@
                 return `
                     <a href="/#album/${encodedKey}"
                        class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer block"
-                       onclick="event.preventDefault(); window.navigateToAlbum(decodeURIComponent('${encodedKey}'))"
+                       onclick="event.preventDefault(); if (window.navigateToAlbum) { window.navigateToAlbum(decodeURIComponent('${encodedKey}')); } else { window.location.href = this.href; }"
                        oncontextmenu="event.preventDefault(); copyAlbumLink(decodeURIComponent('${encodedKey}'))"
                        data-album-key="${key.replace(/"/g, '&quot;')}"
                        title="Right-click to copy link">
