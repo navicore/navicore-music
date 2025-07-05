@@ -289,31 +289,7 @@
             localStorage.setItem('drawer-state', drawerToggle.checked ? 'open' : 'closed');
         }
         
-        // Run initialization
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializePage);
-        } else {
-            initializePage();
-        }
-    </script>
-    
-    <script type="module">
-        console.log('Module script starting');
-        
-        // Initialize WASM audio player when ready
-        import init from '/wasm/navicore_music_frontend.js';
-        
-        async function initializePlayer() {
-            try {
-                await init();
-                console.log('WASM initialized successfully');
-                // TODO: Initialize audio player component
-            } catch (error) {
-                console.error('Failed to initialize WASM:', error);
-            }
-        }
-        
-        // Configure HTMX to use our API
+        // HTMX event handlers
         document.body.addEventListener('htmx:configRequest', (event) => {
             event.detail.headers['Content-Type'] = 'application/json';
             // Update API URLs to use our backend
@@ -322,7 +298,6 @@
             }
         });
         
-        // HTMX event handlers - the proper way
         document.body.addEventListener('htmx:afterSwap', (event) => {
             console.log('HTMX afterSwap fired, target:', event.detail.target.id);
             // This fires after HTMX swaps content into the DOM
@@ -351,13 +326,37 @@
             }
         });
         
-        // Update active nav after content settles
         document.body.addEventListener('htmx:afterSettle', (event) => {
             if (event.detail.target.id === 'main-content') {
                 const path = window.location.pathname + window.location.hash;
                 window.updateActiveNav(path);
             }
         });
+        
+        // Run initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+        } else {
+            initializePage();
+        }
+    </script>
+    
+    <script type="module">
+        console.log('Module script starting');
+        
+        // Initialize WASM audio player when ready
+        import init from '/wasm/navicore_music_frontend.js';
+        
+        async function initializePlayer() {
+            try {
+                await init();
+                console.log('WASM initialized successfully');
+                // TODO: Initialize audio player component
+            } catch (error) {
+                console.error('Failed to initialize WASM:', error);
+            }
+        }
+        
         
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
