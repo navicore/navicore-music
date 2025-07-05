@@ -100,11 +100,20 @@ class AudioPlayer {
     // Set up audio routing but don't connect until first play
     this.audio.crossOrigin = "anonymous"; // Enable CORS for audio analysis
     
-    // Initialize canvas
+    // Initialize canvas with waiting message
     const canvas = document.getElementById('visualizer');
     if (canvas) {
       this.resizeCanvas();
       window.addEventListener('resize', () => this.resizeCanvas());
+      
+      // Show initial state
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#001100';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff00';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Waiting for audio...', canvas.width / 2, canvas.height / 2);
     }
   }
   
