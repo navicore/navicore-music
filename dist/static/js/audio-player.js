@@ -1,6 +1,11 @@
 // Audio Player Module
 class AudioPlayer {
   constructor() {
+    // WASM-or-nothing: Check if WASM is ready
+    if (!window.wasmAudioReady) {
+      throw new Error('AudioPlayer requires WASM audio engine to be initialized first');
+    }
+    
     this.currentTrack = null;
     this.playlist = [];
     this.currentIndex = -1;
@@ -544,14 +549,8 @@ class AnalogOscilloscope {
   }
 }
 
-// Initialize player when DOM is ready
-let audioPlayer;
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    audioPlayer = new AudioPlayer();
-    window.audioPlayer = audioPlayer;
-  });
-} else {
-  audioPlayer = new AudioPlayer();
-  window.audioPlayer = audioPlayer;
+// WASM-or-nothing: Player is initialized by index.html after WASM loads
+// Export the class for dynamic import
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { AudioPlayer };
 }
