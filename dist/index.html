@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <script>
-        console.log('Very first script - full URL:', window.location.href);
-        console.log('Very first script - hash is:', window.location.hash);
-        console.log('Very first script - pathname:', window.location.pathname);
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Navicore Music</title>
@@ -147,8 +142,6 @@
     
     <script>
         // Main app initialization - runs immediately
-        console.log('Main app script starting');
-        console.log('Initial hash on script load:', window.location.hash);
         
         // Update navigation function
         window.updateActiveNav = function(path) {
@@ -174,23 +167,18 @@
         let currentLoadedPage = null;
         window.handleHashChange = function() {
             const hash = window.location.hash;
-            console.log('handleHashChange called, hash:', hash, 'currentLoadedPage:', currentLoadedPage);
             
             // Prevent reloading the same page
             const pageType = hash.startsWith('#music') ? 'music' : hash.substring(1);
             if (currentLoadedPage === pageType && pageType !== 'music') {
-                console.log('Page already loaded, skipping');
                 return;
             }
             
             if (hash === '#home') {
-                console.log('Loading home page');
-                console.trace('Home page load stack trace');
                 currentLoadedPage = 'home';
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
                 window.updateActiveNav('#home');
             } else if (hash === '#upload') {
-                console.log('Loading upload page');
                 currentLoadedPage = 'upload';
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
                 window.updateActiveNav('#upload');
@@ -202,7 +190,6 @@
                 } else {
                     window.currentPage = 1;
                 }
-                console.log('Loading music library, page:', window.currentPage);
                 currentLoadedPage = 'music';
                 
                 htmx.ajax('GET', '/templates/track-list.html', {
@@ -213,7 +200,6 @@
             } else if (hash.startsWith('#album/')) {
                 // Direct album link
                 const albumKey = decodeURIComponent(hash.substring(7));
-                console.log('Loading album:', albumKey);
                 window.currentAlbumToView = albumKey;
                 currentLoadedPage = 'music';
                 
@@ -226,7 +212,6 @@
             } else if (hash.startsWith('#track/')) {
                 // Direct track link
                 const trackId = hash.substring(7);
-                console.log('Loading track:', trackId);
                 window.currentTrackToPlay = trackId;
                 currentLoadedPage = 'music';
                 
@@ -238,8 +223,6 @@
                 window.updateActiveNav('#music');
             } else {
                 // Default to home page
-                console.log('No specific hash match, loading home for hash:', hash);
-                console.trace('Default home page load');
                 currentLoadedPage = 'home';
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
                 window.updateActiveNav('#home');
@@ -248,8 +231,6 @@
         
         // Listen for hash changes
         window.addEventListener('hashchange', (event) => {
-            console.log('hashchange event fired! Old URL:', event.oldURL, 'New URL:', event.newURL);
-            console.log('Current hash:', window.location.hash);
             window.handleHashChange();
         });
         
@@ -257,20 +238,16 @@
         let pageInitialized = false;
         function initializePage() {
             if (pageInitialized) {
-                console.log('Page already initialized, skipping');
                 return;
             }
             pageInitialized = true;
             
-            console.log('Initializing page, current hash:', window.location.hash);
             
             // Default to home page if no hash
             if (!window.location.hash || window.location.hash === '') {
-                console.log('No hash found, defaulting to home');
                 window.location.hash = '#home';
             } else {
                 // Handle the current hash
-                console.log('Hash found, handling:', window.location.hash);
                 window.handleHashChange();
             }
             
@@ -321,9 +298,6 @@
         }
         
         // HTMX event handlers
-        document.body.addEventListener('htmx:beforeRequest', (event) => {
-            console.log('HTMX beforeRequest:', event.detail.path, 'target:', event.detail.target);
-        });
         
         document.body.addEventListener('htmx:configRequest', (event) => {
             event.detail.headers['Content-Type'] = 'application/json';
@@ -334,18 +308,13 @@
         });
         
         document.body.addEventListener('htmx:afterSwap', (event) => {
-            console.log('HTMX afterSwap fired, target:', event.detail.target.id, 'URL:', event.detail.pathInfo.path);
             // This fires after HTMX swaps content into the DOM
             if (event.detail.target.id === 'main-content') {
                 // Log what was just loaded
                 const mainContent = document.getElementById('main-content');
-                const firstText = mainContent ? mainContent.textContent.substring(0, 50) : 'empty';
-                console.log('Main content now contains:', firstText);
                 
                 const libraryContainer = document.getElementById('library-container');
-                console.log('Library container found:', !!libraryContainer, 'initializeTrackList available:', !!window.initializeTrackList);
                 if (libraryContainer && window.initializeTrackList) {
-                    console.log('Track list template detected, initializing...');
                     window.initializeTrackList();
                 }
                 
@@ -382,16 +351,13 @@
     </script>
     
     <script type="module">
-        console.log('Module script starting');
         
         // Initialize WASM audio player when ready
         import init from '/wasm/navicore_music_frontend.js';
         
         async function initializePlayer() {
             try {
-                console.log('Initializing WASM audio engine...');
                 await init();
-                console.log('WASM initialized successfully');
                 
                 // WASM is loaded, now we can initialize audio
                 window.wasmAudioReady = true;
@@ -403,7 +369,6 @@
                     script.src = '/static/js/audio-player.js';
                     script.onload = () => {
                         window.audioPlayer = new AudioPlayer();
-                        console.log('Audio player initialized with WASM support');
                     };
                     script.onerror = () => {
                         console.error('Failed to load audio player script');
