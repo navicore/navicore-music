@@ -1,143 +1,322 @@
-/* Custom styles for Navicore Music */
+/* Navicore Music App Styles */
 
-/* Ensure proper spacing with fixed player */
+/* Root theme variables - Metallic Analog Lab */
+:root {
+  --primary: #00ff88;
+  --primary-focus: #00cc66;
+  --primary-content: #000000;
+  
+  --secondary: #4a4a5e;
+  --secondary-focus: #3a3a4e;
+  --secondary-content: #e0e0e0;
+  
+  --accent: #00ff88;
+  --accent-focus: #00cc66;
+  --accent-content: #000000;
+  
+  --neutral: #2a2a3e;
+  --neutral-focus: #1a1a2e;
+  --neutral-content: #e0e0e0;
+  
+  --base-100: #1a1a1f;
+  --base-200: #222228;
+  --base-300: #2a2a30;
+  --base-content: #e0e0e0;
+  
+  --info: #00b4d8;
+  --success: #00ff88;
+  --warning: #ffb700;
+  --error: #ff006e;
+}
+
+/* DaisyUI theme override for dark theme */
+[data-theme="dark"] {
+  --p: 142 72% 56%;  /* primary */
+  --pf: 142 72% 46%; /* primary-focus */
+  --pc: 0 0% 0%;     /* primary-content */
+  
+  --s: 240 12% 33%;  /* secondary */
+  --sf: 240 12% 25%; /* secondary-focus */
+  --sc: 0 0% 88%;    /* secondary-content */
+  
+  --a: 142 72% 56%;  /* accent */
+  --af: 142 72% 46%; /* accent-focus */
+  --ac: 0 0% 0%;     /* accent-content */
+  
+  --n: 240 20% 20%;  /* neutral */
+  --nf: 240 20% 15%; /* neutral-focus */
+  --nc: 0 0% 88%;    /* neutral-content */
+  
+  --b1: 240 10% 10%; /* base-100 */
+  --b2: 240 8% 13%;  /* base-200 */
+  --b3: 240 8% 16%;  /* base-300 */
+  --bc: 0 0% 88%;    /* base-content */
+}
+
+/* Global styles */
 body {
-    padding-bottom: 80px; /* Space for audio player */
+  background-color: var(--base-100);
+  color: var(--base-content);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 35px,
+      rgba(255, 255, 255, 0.01) 35px,
+      rgba(255, 255, 255, 0.01) 70px
+    );
 }
 
-@media (min-width: 1024px) {
-    body {
-        padding-bottom: 0;
-    }
+/* Metallic card styling */
+.card {
+  background: linear-gradient(135deg, var(--base-200) 0%, var(--base-100) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Custom scrollbar for dark theme */
+.card:hover {
+  box-shadow: 
+    0 8px 16px rgba(0, 255, 136, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Button styling to match player */
+.btn {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--neutral) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.btn:hover {
+  box-shadow: 
+    0 4px 8px rgba(0, 255, 136, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.btn:active {
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-focus) 100%);
+  color: var(--primary-content);
+  border-color: var(--primary-focus);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-focus) 0%, var(--primary) 100%);
+  box-shadow: 
+    0 4px 12px rgba(0, 255, 136, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Input styling */
+.input, .file-input, .select, .textarea {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--secondary);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.input:focus, .file-input:focus, .select:focus, .textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(0, 255, 136, 0.2);
+}
+
+/* Navigation styling */
+.drawer-side {
+  background: linear-gradient(180deg, var(--base-200) 0%, var(--base-100) 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nav-link {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: rgba(0, 255, 136, 0.05);
+  color: var(--primary);
+}
+
+.nav-link.bg-base-300 {
+  background: linear-gradient(90deg, rgba(0, 255, 136, 0.1) 0%, transparent 100%);
+  color: var(--primary);
+}
+
+.nav-link.bg-base-300::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+}
+
+/* Progress bar styling */
+.progress {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--secondary);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progress-primary::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-focus) 100%);
+}
+
+/* Stats styling */
+.stats {
+  background: linear-gradient(135deg, var(--base-200) 0%, var(--base-100) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.stat {
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat:last-child {
+  border-right: none;
+}
+
+/* Modal styling */
+.modal-box {
+  background: linear-gradient(135deg, var(--base-200) 0%, var(--base-100) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Alert styling */
+.alert {
+  background: linear-gradient(135deg, var(--base-200) 0%, var(--base-100) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.alert-success {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 255, 136, 0.05) 100%);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.alert-error {
+  background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(255, 0, 110, 0.05) 100%);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.alert-info {
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.1) 0%, rgba(0, 180, 216, 0.05) 100%);
+  border-color: var(--info);
+  color: var(--info);
+}
+
+/* Loading spinner with theme color */
+.loading-spinner {
+  color: var(--primary);
+}
+
+/* Scrollbar styling */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+  background: var(--base-100);
+  border: 1px solid var(--base-300);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+  background: linear-gradient(180deg, var(--secondary) 0%, var(--neutral) 100%);
+  border-radius: 6px;
+  border: 1px solid var(--base-300);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(180deg, var(--secondary-focus) 0%, var(--neutral-focus) 100%);
 }
 
-/* Smooth transitions for interactive elements */
-.transition-colors {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
+/* Table styling */
+.table {
+  background-color: transparent;
 }
 
-/* Album art loading states */
-.skeleton {
-    animation: skeleton-loading 1s linear infinite alternate;
+.table thead tr {
+  border-bottom: 2px solid var(--secondary);
 }
 
-@keyframes skeleton-loading {
-    0% {
-        background-color: hsl(200, 20%, 15%);
-    }
-    100% {
-        background-color: hsl(200, 20%, 25%);
-    }
+.table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Mobile-specific styles */
-@media (max-width: 767px) {
-    /* Compact mobile player */
-    #mobile-player {
-        display: grid;
-        grid-template-columns: 48px 1fr auto;
-        align-items: center;
-        gap: 12px;
-        padding: 8px;
-    }
-    
-    /* Ensure content doesn't get hidden behind player */
-    main {
-        padding-bottom: 100px !important;
-    }
+.table tbody tr:hover {
+  background-color: rgba(0, 255, 136, 0.02);
 }
 
-/* Desktop-specific enhancements */
-@media (min-width: 1024px) {
-    /* Sidebar always visible */
-    .drawer-side-desktop {
-        position: relative;
-        display: block;
-        width: auto;
-        min-height: 100vh;
-    }
-    
-    /* Fixed audio player positioning */
-    #audio-player-mount {
-        height: 80px;
-        z-index: 40;
-    }
-    
-    /* Now playing panel animations */
-    #now-playing-panel img {
-        transition: transform 0.3s ease;
-    }
-    
-    #now-playing-panel:hover img {
-        transform: scale(1.02);
-    }
+/* Badge styling */
+.badge {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--neutral) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Ultra-wide screen optimizations */
-@media (min-width: 2560px) {
-    /* Increase max content width */
-    main > div {
-        max-width: 2000px;
-        margin: 0 auto;
-    }
-    
-    /* Larger grid items */
-    #grid-view {
-        gap: 24px;
-    }
+.badge-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-focus) 100%);
+  color: var(--primary-content);
 }
 
-/* Touch-friendly mobile interactions */
-@media (hover: none) and (pointer: coarse) {
-    /* Larger touch targets */
-    .btn {
-        min-height: 44px;
-        min-width: 44px;
-    }
-    
-    /* Remove hover effects on mobile */
-    .group:hover .group-hover\:opacity-100 {
-        opacity: 0;
-    }
-    
-    /* Show play button on tap */
-    .group:active .group-hover\:opacity-100 {
-        opacity: 1;
-    }
+/* Tab styling */
+.tabs-boxed {
+  background: linear-gradient(135deg, var(--base-200) 0%, var(--base-100) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-    .btn-ghost {
-        border: 1px solid currentColor;
-    }
+.tab {
+  color: var(--base-content);
 }
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.001ms !important;
-        transition-duration: 0.001ms !important;
-    }
+.tab:hover {
+  color: var(--primary);
+}
+
+.tab-active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-focus) 100%);
+  color: var(--primary-content);
+  box-shadow: 
+    0 2px 4px rgba(0, 255, 136, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Make the logo glow */
+.text-primary {
+  text-shadow: 0 0 20px var(--primary);
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Override DaisyUI drawer background */
+.drawer-side .bg-base-200 {
+  background: linear-gradient(180deg, #222228 0%, #1a1a1f 100%);
 }
