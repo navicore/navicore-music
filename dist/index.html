@@ -131,6 +131,16 @@
     <!-- Load Music Library Functions -->
     <script src="/static/js/music-library.js"></script>
     
+    <script>
+        // Ensure critical functions are loaded
+        window.addEventListener('load', () => {
+            console.log('Window loaded, checking dependencies...');
+            console.log('initializeTrackList available:', typeof initializeTrackList);
+            console.log('showAlbumDetails available:', typeof showAlbumDetails);
+            console.log('playTrack available:', typeof playTrack);
+        });
+    </script>
+    
     <script type="module">
         // Initialize WASM audio player when ready
         import init from '/wasm/navicore_music_frontend.js';
@@ -286,6 +296,28 @@
         
         // Remove the click event listener - let the browser handle hash navigation naturally
         
+        // Ensure we don't miss early HTMX events
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupHtmxHandlers);
+        } else {
+            setupHtmxHandlers();
+        }
+        
+        function setupHtmxHandlers() {
+            // Set up HTMX event handlers
+            document.body.addEventListener('htmx:afterSettle', (event) => {
+                if (event.detail.target.id === 'main-content') {
+                    // Check if we just loaded the track list template
+                    const libraryContainer = document.getElementById('library-container');
+                    if (libraryContainer && !libraryContainer.dataset.initialized) {
+                        console.log('Music library detected, marking as initialized');
+                        libraryContainer.dataset.initialized = 'true';
+                        // The template's own script will handle initialization
+                    }
+                }
+            });
+        }
+        
         // Load initial content based on URL
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOMContentLoaded, calling handleHashChange');
@@ -313,22 +345,10 @@
             }
         });
         
-        // Initialize track list when Music page loads
-        document.body.addEventListener('htmx:afterSettle', (event) => {
-            if (event.detail.target.id === 'main-content') {
-                // Check if we just loaded the track list template
-                const libraryContainer = document.getElementById('library-container');
-                if (libraryContainer) {
-                    console.log('Music library detected, initializing...');
-                    // Small delay to ensure DOM is ready
-                    setTimeout(() => {
-                        if (typeof initializeTrackList === 'function') {
-                            initializeTrackList();
-                        } else {
-                            console.error('initializeTrackList function not found');
-                        }
-                    }, 100);
-                }
+        // Auto-close drawer on mobile after navigation
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            if (event.detail.target.id === 'main-content' && window.innerWidth < 1024) {
+                document.getElementById('drawer-toggle').checked = false;
             }
         });
     </script>

@@ -9,7 +9,7 @@ let albums = {};
 let currentAlbumKey = null;
 
 // Initialize track list
-function initializeTrackList() {
+window.initializeTrackList = function() {
     // Load and display library
     fetch('https://api.navicore.tech/api/v1/tracks')
     .then(res => res.json())
@@ -47,9 +47,9 @@ function initializeTrackList() {
             `;
         }
     });
-}
+};
 
-function renderLibrary() {
+window.renderLibrary = function() {
     const container = document.getElementById('library-container');
     if (!container) return;
     
@@ -108,7 +108,7 @@ function renderLibrary() {
         }
     }
     
-    function renderAlbumView(tracks) {
+    window.renderAlbumView = function(tracks) {
         const container = document.getElementById('library-container');
         
         // Group tracks by album
@@ -200,7 +200,7 @@ function renderLibrary() {
         `).join('') + '</div>';
     }
     
-    function renderGridView(tracks) {
+    window.renderGridView = function(tracks) {
         const container = document.getElementById('library-container');
         
         // Group tracks by album for grid
@@ -231,7 +231,7 @@ function renderLibrary() {
             `).join('') + '</div>';
     }
     
-    function renderListView(tracks) {
+    window.renderListView = function(tracks) {
         const container = document.getElementById('library-container');
         
         container.innerHTML = `
@@ -268,7 +268,7 @@ function renderLibrary() {
         `;
     }
     
-    function setView(view) {
+    window.setView = function(view) {
         currentView = view;
         
         // Update button states
@@ -281,14 +281,14 @@ function renderLibrary() {
         });
         
         renderLibrary();
-    }
+    };
     
-    function handleSearch(event) {
+    window.handleSearch = function(event) {
         searchQuery = event.target.value;
         renderLibrary();
-    }
+    };
 
-function formatDuration(seconds) {
+window.formatDuration = function(seconds) {
     if (!seconds) return '-:--';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -305,7 +305,7 @@ window.playTrack = function(trackId) {
     }
 }
 
-function playAlbum(albumKey) {
+window.playAlbum = function(albumKey) {
     const album = albums[albumKey];
     if (album && album.tracks.length > 0 && window.audioPlayer) {
         // Set album tracks as playlist
@@ -314,7 +314,7 @@ function playAlbum(albumKey) {
     }
 }
 
-function editAlbum(albumKey) {
+window.editAlbum = function(albumKey) {
     currentAlbumKey = albumKey;
     const album = albums[albumKey];
     
@@ -334,7 +334,7 @@ function editAlbum(albumKey) {
     document.getElementById('album-edit-modal').showModal();
 }
 
-function updateTrackList(album) {
+window.updateTrackList = function(album) {
     const trackList = document.getElementById('album-tracks');
     trackList.innerHTML = album.tracks.map(track => `
         <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
@@ -351,18 +351,18 @@ function updateTrackList(album) {
     `).join('');
 }
 
-function showAddTrackForm() {
+window.showAddTrackForm = function() {
     document.getElementById('add-track-form').classList.remove('hidden');
 }
 
-function hideAddTrackForm() {
+window.hideAddTrackForm = function() {
     document.getElementById('add-track-form').classList.add('hidden');
     document.getElementById('new-track-file').value = '';
     document.getElementById('new-track-title').value = '';
     document.getElementById('new-track-number').value = '';
 }
 
-async function uploadNewTrack() {
+window.uploadNewTrack = async function() {
     const album = albums[currentAlbumKey];
     const fileInput = document.getElementById('new-track-file');
     const titleInput = document.getElementById('new-track-title');
@@ -415,7 +415,7 @@ async function uploadNewTrack() {
     }
 }
 
-async function removeTrack(trackId, trackTitle) {
+window.removeTrack = async function(trackId, trackTitle) {
     if (!confirm(`Remove "${trackTitle}" from this album?`)) return;
     
     try {
@@ -436,7 +436,7 @@ async function removeTrack(trackId, trackTitle) {
     }
 }
 
-async function deleteAlbum() {
+window.deleteAlbum = async function() {
     const album = albums[currentAlbumKey];
     if (!confirm(`Delete entire album "${album.album}" by ${album.artist}?\n\nThis will remove all ${album.tracks.length} tracks.`)) {
         return;
@@ -460,19 +460,19 @@ async function deleteAlbum() {
     }
 }
 
-function closeEditModal() {
+window.closeEditModal = function() {
     document.getElementById('album-edit-modal').close();
     hideAddTrackForm();
 }
 
-function extractTrackName(filename) {
+window.extractTrackName = function(filename) {
     let name = filename.replace(/\.[^/.]+$/, '');
     name = name.replace(/^\d+[\s\-_.]*/, '');
     name = name.replace(/[\-_]/g, ' ').trim();
     return name || filename;
 }
 
-function formatFileSize(bytes) {
+window.formatFileSize = function(bytes) {
     if (!bytes) return '';
     if (bytes < 1024 * 1024) {
         return (bytes / 1024).toFixed(1) + ' KB';
@@ -520,7 +520,7 @@ window.showAlbumDetails = function(albumKey) {
 }
 
 // Render a single album view
-function renderSingleAlbum(albumObj, albumKey) {
+window.renderSingleAlbum = function(albumObj, albumKey) {
     const container = document.getElementById('library-container');
     const [key, album] = Object.entries(albumObj)[0];
     
@@ -596,7 +596,7 @@ function renderSingleAlbum(albumObj, albumKey) {
 }
 
 // Copy album link to clipboard
-function copyAlbumLink(albumKey) {
+window.copyAlbumLink = function(albumKey) {
     const url = `${window.location.origin}/#album/${encodeURIComponent(albumKey)}`;
     
     // Try to use the clipboard API
@@ -609,10 +609,10 @@ function copyAlbumLink(albumKey) {
     } else {
         fallbackCopyTextToClipboard(url);
     }
-}
+};
 
 // Copy track link to clipboard
-function copyTrackLink(trackId) {
+window.copyTrackLink = function(trackId) {
     const url = `${window.location.origin}/#track/${trackId}`;
     
     if (navigator.clipboard) {
@@ -624,10 +624,10 @@ function copyTrackLink(trackId) {
     } else {
         fallbackCopyTextToClipboard(url);
     }
-}
+};
 
 // Fallback copy method for older browsers
-function fallbackCopyTextToClipboard(text) {
+window.fallbackCopyTextToClipboard = function(text) {
     const textArea = document.createElement("textarea");
     textArea.value = text;
     textArea.style.position = "fixed";
@@ -656,7 +656,7 @@ function fallbackCopyTextToClipboard(text) {
 }
 
 // Show a toast notification
-function showToast(message) {
+window.showToast = function(message) {
     const toast = document.createElement('div');
     toast.className = 'toast toast-top toast-center';
     toast.innerHTML = `
@@ -673,7 +673,7 @@ function showToast(message) {
 }
 
 // Update URL and view when clicking albums/tracks
-function updateUrlAndView(type, id) {
+window.updateUrlAndView = function(type, id) {
     if (type === 'album') {
         console.log('updateUrlAndView: navigating to album', id);
         window.location.hash = 'album/' + encodeURIComponent(id);

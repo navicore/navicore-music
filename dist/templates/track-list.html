@@ -104,17 +104,37 @@
 <script>
     // Ensure the library loads even if the main event handler misses it
     (function() {
+        let retryCount = 0;
+        const maxRetries = 50; // 5 seconds total
+        
         const tryInit = () => {
+            retryCount++;
+            
+            // Check if music-library.js is loaded
             if (typeof initializeTrackList === 'function') {
                 console.log('Initializing track list from template');
                 initializeTrackList();
-            } else {
-                console.log('Waiting for music-library.js to load...');
+            } else if (retryCount < maxRetries) {
+                console.log(`Waiting for music-library.js to load... (attempt ${retryCount}/${maxRetries})`);
                 setTimeout(tryInit, 100);
+            } else {
+                console.error('Failed to load music library after 5 seconds');
+                // Show error to user
+                const container = document.getElementById('library-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="alert alert-error">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Failed to load music library. Please refresh the page.</span>
+                        </div>
+                    `;
+                }
             }
         };
         
-        // Start trying after a small delay
-        setTimeout(tryInit, 100);
+        // Start trying immediately
+        tryInit();
     })();
 </script>
