@@ -6,9 +6,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 25vh;
-  min-height: 150px;
-  max-height: min(250px, 100vh); /* Never exceed viewport height */
+  height: 200px; /* Fixed optimal height */
   background: var(--player-bg);
   border-top: 2px solid var(--player-border);
   display: flex;
@@ -29,8 +27,7 @@
 
 /* Minimized state */
 .audio-player.minimized {
-  height: 60px;
-  min-height: 60px;
+  height: 80px; /* Still substantial when minimized */
 }
 
 /* Theme: Analog Laboratory */
@@ -263,9 +260,7 @@
 /* Responsive Design */
 @media (max-width: 1024px) {
   .audio-player {
-    height: 30vh;
-    min-height: 180px;
-    max-height: 33vh; /* Ensure it never takes more than 1/3 of viewport */
+    height: 200px; /* Keep fixed height on tablets */
   }
   
   .player-visual {
@@ -281,9 +276,7 @@
 @media (max-width: 768px) {
   .audio-player {
     flex-direction: column;
-    height: 35vh;
-    min-height: 280px;
-    max-height: 40vh; /* Limit height on mobile */
+    height: 220px; /* Slightly taller on mobile for vertical layout */
   }
   
   .player-album {
@@ -296,7 +289,7 @@
   }
   
   .player-visual {
-    flex: 0 0 100px;
+    flex: 0 0 80px;
     width: 100%;
     margin-top: 0.5rem;
   }
@@ -331,12 +324,22 @@
   color: var(--player-secondary);
 }
 
-/* Extra safety for very small viewports */
-@media (max-height: 400px) {
+/* Only shrink when viewport is critically small */
+@media (max-height: 500px) {
   .audio-player {
-    height: 120px;
-    min-height: 120px;
-    max-height: 120px;
+    height: 160px; /* Compromise a bit */
+  }
+  
+  .album-art-container {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+/* Emergency mode for tiny viewports */
+@media (max-height: 350px) {
+  .audio-player {
+    height: 120px; /* Minimum viable height */
   }
   
   .album-art-container {
@@ -349,7 +352,7 @@
   }
   
   .player-visual {
-    display: none; /* Hide visualizer on very short screens */
+    display: none; /* Hide visualizer only in emergency */
   }
 }
 
