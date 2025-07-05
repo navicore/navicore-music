@@ -22,10 +22,15 @@ window.initializeTrackList = function() {
     }
     
     // Load and display library
+    console.log('Fetching tracks from API...');
     fetch('https://api.navicore.tech/api/v1/tracks')
-    .then(res => res.json())
+    .then(res => {
+        console.log('API response status:', res.status);
+        return res.json();
+    })
     .then(data => {
-        allTracks = data.tracks;
+        console.log('Tracks loaded:', data.tracks?.length || 0, 'tracks');
+        allTracks = data.tracks || [];
         renderLibrary();
         
         // Check if we need to navigate to a specific album or track
