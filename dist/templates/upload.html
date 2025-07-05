@@ -328,16 +328,40 @@
     
     function updateProgress(current, total, trackName) {
         const percent = Math.round((current / total) * 100);
-        document.getElementById('overall-progress').value = percent;
-        document.getElementById('overall-progress-text').textContent = `${percent}%`;
+        const progressBar = document.getElementById('overall-progress');
+        const progressText = document.getElementById('overall-progress-text');
         
+        // Update overall progress
+        progressBar.value = percent;
+        progressBar.setAttribute('value', percent);
+        progressText.textContent = `${percent}%`;
+        
+        // Update track list
+        const trackList = document.getElementById('track-progress-list');
         if (current === 0) {
-            document.getElementById('track-progress-list').innerHTML = '';
+            trackList.innerHTML = '';
         }
         
-        document.getElementById('track-progress-list').innerHTML += `
-            <div class="text-sm opacity-70">Uploading: ${trackName}</div>
+        // Add track with its own mini progress indicator
+        const trackDiv = document.createElement('div');
+        trackDiv.className = 'flex items-center gap-2';
+        trackDiv.innerHTML = `
+            <span class="loading loading-spinner loading-sm"></span>
+            <span class="text-sm">${trackName}</span>
         `;
+        trackList.appendChild(trackDiv);
+        
+        // Mark previous tracks as complete
+        const allTracks = trackList.querySelectorAll('div');
+        if (allTracks.length > 1) {
+            const prevTrack = allTracks[allTracks.length - 2];
+            prevTrack.innerHTML = `
+                <svg class="w-5 h-5 text-success" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="text-sm opacity-70">${prevTrack.querySelector('span:last-child').textContent}</span>
+            `;
+        }
     }
     
     function showUploadResults(success, result) {
