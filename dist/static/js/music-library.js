@@ -265,7 +265,14 @@ window.renderLibrary = function() {
                 <div class="card bg-base-200 hover:shadow-xl transition-shadow cursor-pointer" 
                      onclick="editAlbum('${key.replace(/'/g, "\\'")}')"">
                     <div class="card-body p-4">
-                        <div class="aspect-square bg-base-300 rounded mb-2"></div>
+                        <div class="aspect-square bg-base-300 rounded mb-2 overflow-hidden">
+                            <img src="${album.tracks[0].cover_art_path ? 
+                                `https://api.navicore.tech/api/v1/tracks/${album.tracks[0].id}/cover` : 
+                                '/static/images/default-album.svg'}" 
+                                 alt="${album.album}" 
+                                 class="w-full h-full object-cover"
+                                 onerror="this.src='/static/images/default-album.svg'">
+                        </div>
                         <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
                         <p class="text-xs opacity-70 line-clamp-1">${album.artist}</p>
                     </div>
@@ -281,6 +288,7 @@ window.renderLibrary = function() {
                 <table class="table table-zebra">
                     <thead>
                         <tr>
+                            <th></th>
                             <th>Title</th>
                             <th>Artist</th>
                             <th>Album</th>
@@ -291,6 +299,16 @@ window.renderLibrary = function() {
                     <tbody>
                         ${tracks.map(track => `
                             <tr>
+                                <td>
+                                    <div class="w-10 h-10">
+                                        <img src="${track.cover_art_path ? 
+                                            `https://api.navicore.tech/api/v1/tracks/${track.id}/cover` : 
+                                            '/static/images/default-album.svg'}" 
+                                             alt="${track.album}" 
+                                             class="w-full h-full object-cover rounded"
+                                             onerror="this.src='/static/images/default-album.svg'">
+                                    </div>
+                                </td>
                                 <td class="font-semibold">${track.title}</td>
                                 <td>${track.artist}</td>
                                 <td>${track.album}</td>
@@ -579,16 +597,26 @@ window.renderSingleAlbum = function(albumObj, albumKey) {
              oncontextmenu="event.preventDefault(); copyAlbumLink('${key.replace(/'/g, "\\\\'")}')"
              title="Right-click to copy album link">
             <div class="card-body">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="card-title text-2xl">${album.album}</h3>
-                        <p class="text-lg text-base-content/70">${album.artist}</p>
-                        <p class="text-sm opacity-70 mt-1">
-                            ${album.year || 'Unknown year'} 
-                            ${album.genre ? `• ${album.genre}` : ''}
-                            • ${album.tracks.length} tracks
-                        </p>
+                <div class="flex gap-6">
+                    <div class="w-48 h-48 flex-shrink-0">
+                        <img src="${album.tracks[0].cover_art_path ? 
+                            `https://api.navicore.tech/api/v1/tracks/${album.tracks[0].id}/cover` : 
+                            '/static/images/default-album.svg'}" 
+                             alt="${album.album}" 
+                             class="w-full h-full object-cover rounded-lg shadow-lg"
+                             onerror="this.src='/static/images/default-album.svg'">
                     </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="card-title text-2xl">${album.album}</h3>
+                                <p class="text-lg text-base-content/70">${album.artist}</p>
+                                <p class="text-sm opacity-70 mt-1">
+                                    ${album.year || 'Unknown year'} 
+                                    ${album.genre ? `• ${album.genre}` : ''}
+                                    • ${album.tracks.length} tracks
+                                </p>
+                            </div>
                     <div class="flex gap-2">
                         <button class="btn btn-sm btn-circle btn-primary" onclick="playAlbum('${key.replace(/'/g, "\\'")}')">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -606,6 +634,8 @@ window.renderSingleAlbum = function(albumObj, albumKey) {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
                             </svg>
                         </button>
+                    </div>
+                        </div>
                     </div>
                 </div>
                 

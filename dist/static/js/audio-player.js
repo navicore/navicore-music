@@ -217,9 +217,14 @@ class AudioPlayer {
     const player = document.getElementById('audio-player');
     player.classList.remove('hidden');
     
-    // Update album art if available
-    if (track.album_art) {
-      document.querySelector('.album-art').src = track.album_art;
+    // Update album art
+    const albumArtElement = document.querySelector('.album-art');
+    if (track.cover_art_path) {
+      // If we have album art, load it from the API
+      albumArtElement.src = `https://api.navicore.tech/api/v1/tracks/${track.id}/cover`;
+    } else {
+      // Use default album art
+      albumArtElement.src = '/static/images/default-album.svg';
     }
     
     // Save state

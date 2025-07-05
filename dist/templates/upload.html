@@ -222,6 +222,8 @@
         const album = document.getElementById('album-input').value;
         const genre = document.getElementById('genre-input').value;
         const year = document.getElementById('year-input').value;
+        const coverInput = document.querySelector('input[name="cover"]');
+        const coverFile = coverInput.files[0];
         
         const tracksToUpload = selectedTracks.filter(t => !t.isLarge);
         
@@ -235,10 +237,34 @@
         
         let uploadedCount = 0;
         uploadedTracks = [];
+        let coverArtPath = null;
+        
+        // Upload cover art first if provided
+        if (coverFile) {
+            updateProgress(0, tracksToUpload.length + 1, 'Uploading album cover...');
+            
+            const coverFormData = new FormData();
+            coverFormData.append('file', coverFile);
+            coverFormData.append('type', 'cover');
+            
+            try {
+                const coverResponse = await fetch('https://api.navicore.tech/api/v1/upload/cover', {
+                    method: 'POST',
+                    body: coverFormData
+                });
+                
+                if (coverResponse.ok) {
+                    const coverResult = await coverResponse.json();
+                    coverArtPath = coverResult.path;
+                }
+            } catch (error) {
+                console.error('Failed to upload cover art:', error);
+            }
+        }
         
         for (let i = 0; i < tracksToUpload.length; i++) {
             const track = tracksToUpload[i];
-            updateProgress(i, tracksToUpload.length, track.name);
+            updateProgress(coverFile ? i + 1 : i, coverFile ? tracksToUpload.length + 1 : tracksToUpload.length, track.name);
             
             const formData = new FormData();
             formData.append('file', track.file);
@@ -248,7 +274,8 @@
                 album: album,
                 genre: genre,
                 year: parseInt(year),
-                track_number: track.trackNumber
+                track_number: track.trackNumber,
+                cover_art_path: coverArtPath
             }));
             
             try {
