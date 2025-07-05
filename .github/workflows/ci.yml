@@ -6,137 +6,90 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
-  RUSTFLAGS: -D warnings
-
 jobs:
   check:
-    name: Check
+    name: Lint and Validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          components: rustfmt, clippy
+          node-version: '20'
       
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+      - name: Install dependencies
+        run: npm install
       
-      - name: Check formatting
-        run: make fmt
+      - name: Validate package.json
+        run: npm ls
       
-      - name: Run clippy
-        run: make clippy
-      
-      - name: Run tests
-        run: make test
-      
-      - name: Build
-        run: make build
-
-  test:
-    name: Test Suite
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable]
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ matrix.rust }}
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Run tests
-        run: cargo test --workspace --all-targets
-
-  wasm:
-    name: WASM Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Build frontend WASM
+      - name: Check HTML validity
         run: |
-          cd frontend
-          wasm-pack build --target web --out-dir ../backend/static/wasm
-
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+          echo "Checking HTML files for basic syntax..."
+          find dist -name "*.html" -exec echo "Checking {}" \; -exec node -e "
+            const fs = require('fs');
+            const content = fs.readFileSync('{}', 'utf8');
+            // Basic HTML validation
+            if (!content.includes('<!DOCTYPE html>')) console.error('{}: Missing DOCTYPE');
+            if (!content.includes('<html')) console.error('{}: Missing html tag');
+            if (!content.includes('</html>')) console.error('{}: Missing closing html tag');
+          " \;
       
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
-      
-      - name: Run security audit
+      - name: Check JavaScript syntax
         run: |
-          echo "Checking for security vulnerabilities..."
-          # Allow proc-macro-error warning (unmaintained, not a vulnerability)
-          # Allow RSA vulnerability in sqlx-mysql (we only use SQLite)
-          cargo audit --ignore RUSTSEC-2024-0370 --ignore RUSTSEC-2023-0071
+          echo "Checking JavaScript syntax in HTML files..."
+          find dist -name "*.html" -exec grep -l "<script" {} \; | while read file; do
+            echo "Checking $file"
+            # Extract and check inline scripts (basic check)
+            node -e "
+              const fs = require('fs');
+              const content = fs.readFileSync('$file', 'utf8');
+              const scripts = content.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
+              scripts.forEach((script, i) => {
+                const code = script.replace(/<script[^>]*>|<\/script>/g, '');
+                if (code.trim()) {
+                  try {
+                    new Function(code);
+                  } catch (e) {
+                    console.error('$file: Script ' + i + ' has syntax error: ' + e.message);
+                  }
+                }
+              });
+            "
+          done
+      
+      - name: Check Worker JavaScript
+        run: |
+          echo "Checking Worker files..."
+          node -c build/worker/shim.mjs
+          node -c build/worker/zip-utils.mjs
+      
+      - name: Verify deployment files exist
+        run: |
+          echo "Checking required files..."
+          test -f wrangler.toml || (echo "Missing wrangler.toml" && exit 1)
+          test -f package.json || (echo "Missing package.json" && exit 1)
+          test -d dist || (echo "Missing dist directory" && exit 1)
+          test -f dist/index.html || (echo "Missing dist/index.html" && exit 1)
+          test -f build/worker/shim.mjs || (echo "Missing worker file" && exit 1)
 
-  coverage:
-    name: Code Coverage
+  test-deploy:
+    name: Test Deployment (Dry Run)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
-      
-      - name: Run coverage
-        run: cargo tarpaulin --workspace --out Xml
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Test Worker build (dry run)
+        run: npx wrangler deploy --dry-run --outdir=test-build
+        env:
+          CLOUDFLARE_API_TOKEN: "dummy-token-for-dry-run"
+          CLOUDFLARE_ACCOUNT_ID: "dummy-account-for-dry-run"

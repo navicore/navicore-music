@@ -1,100 +1,121 @@
-.PHONY: all build check test clippy fmt clean run-backend run-frontend ci
+.PHONY: all install dev deploy deploy-worker deploy-pages test lint check clean help
 
 # Default target
-all: fmt clippy test build
+all: help
 
-# Build all targets
-build:
-	@echo "Building all workspace members..."
-	cargo build --workspace --all-targets
+# Help message
+help:
+	@echo "Navicore Music - Development Commands"
+	@echo "===================================="
+	@echo "make install       - Install dependencies"
+	@echo "make check        - Run all checks (lint + test)"
+	@echo "make lint         - Check code quality"
+	@echo "make test         - Run tests"
+	@echo "make dev          - Start local development server"
+	@echo "make deploy       - Deploy to production (Worker + Pages)"
+	@echo "make clean        - Clean build artifacts"
 
-# Build release
-build-release:
-	@echo "Building release..."
-	cargo build --workspace --release --all-targets
+# Install dependencies
+install:
+	@echo "Installing dependencies..."
+	npm install
 
-# Run checks (fast CI)
-check:
-	@echo "Running cargo check..."
-	cargo check --workspace --all-targets
+# Run all checks (what CI runs)
+check: lint test
+	@echo "All checks passed!"
+
+# Lint and validate code
+lint:
+	@echo "=== Validating package.json ==="
+	npm ls || (echo "Package validation failed" && exit 1)
+	
+	@echo "\n=== Checking HTML files ==="
+	@find dist -name "*.html" -exec echo "Checking {}" \; -exec node -e "\
+		const fs = require('fs'); \
+		const content = fs.readFileSync('{}', 'utf8'); \
+		if (!content.includes('<!DOCTYPE html>')) console.error('{}: Missing DOCTYPE'); \
+		if (!content.includes('<html')) console.error('{}: Missing html tag'); \
+		if (!content.includes('</html>')) console.error('{}: Missing closing html tag'); \
+	" \;
+	
+	@echo "\n=== Checking JavaScript in HTML ==="
+	@find dist -name "*.html" -exec grep -l "<script" {} \; 2>/dev/null | while read file; do \
+		echo "Checking $$file"; \
+		node -e "\
+			const fs = require('fs'); \
+			const content = fs.readFileSync('$$file', 'utf8'); \
+			const scripts = content.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || []; \
+			let hasError = false; \
+			scripts.forEach((script, i) => { \
+				const code = script.replace(/<script[^>]*>|<\/script>/g, ''); \
+				if (code.trim() && !code.includes('import ')) { \
+					try { \
+						new Function(code); \
+					} catch (e) { \
+						console.error('$$file: Script ' + i + ' has syntax error: ' + e.message); \
+						hasError = true; \
+					} \
+				} \
+			}); \
+			if (hasError) process.exit(1); \
+		" || exit 1; \
+	done
+	
+	@echo "\n=== Checking Worker JavaScript ==="
+	@node -c build/worker/shim.mjs || (echo "Worker shim.mjs has syntax errors" && exit 1)
+	@node -c build/worker/zip-utils.mjs || (echo "Worker zip-utils.mjs has syntax errors" && exit 1)
+	
+	@echo "\n=== Verifying required files ==="
+	@test -f wrangler.toml || (echo "Missing wrangler.toml" && exit 1)
+	@test -f package.json || (echo "Missing package.json" && exit 1)
+	@test -d dist || (echo "Missing dist directory" && exit 1)
+	@test -f dist/index.html || (echo "Missing dist/index.html" && exit 1)
+	@test -f build/worker/shim.mjs || (echo "Missing worker file" && exit 1)
+	
+	@echo "\nAll lint checks passed!"
 
 # Run tests
 test:
-	@echo "Running tests..."
-	cargo test --workspace --all-targets
+	@echo "=== Testing Worker deployment (dry run) ==="
+	CLOUDFLARE_API_TOKEN="dummy-token" CLOUDFLARE_ACCOUNT_ID="dummy-account" \
+		npx wrangler deploy --dry-run --outdir=test-build >/dev/null 2>&1 || \
+		(echo "Worker deployment test failed" && exit 1)
+	@rm -rf test-build
+	@echo "Worker deployment test passed!"
 
-# Run clippy with strict lints
-clippy:
-	@echo "Running clippy..."
-	cargo clippy --workspace --all-targets -- \
-		-W clippy::all \
-		-W clippy::pedantic \
-		-W clippy::nursery \
-		-W clippy::cargo \
-		-W rust-2024-compatibility \
-		-A clippy::module_name_repetitions \
-		-A clippy::must_use_candidate \
-		-A clippy::missing_errors_doc \
-		-A clippy::missing_panics_doc \
-		-A clippy::multiple_crate_versions
+# Development server
+dev:
+	@echo "Starting Wrangler dev server..."
+	npm run dev:api
 
-# Format code
-fmt:
-	@echo "Formatting code..."
-	cargo fmt --all
-	@echo "Checking format..."
-	cargo fmt --all -- --check
+# Deploy everything
+deploy:
+	@echo "Deploying to Cloudflare..."
+	npm run deploy
+
+# Deploy Worker only
+deploy-worker:
+	@echo "Deploying Worker API..."
+	npm run deploy:api
+
+# Deploy Pages only
+deploy-pages:
+	@echo "Deploying Pages frontend..."
+	npm run deploy:pages
 
 # Clean build artifacts
 clean:
 	@echo "Cleaning..."
-	cargo clean
+	rm -rf node_modules
+	rm -rf test-build
+	rm -f package-lock.json
+	@echo "Clean complete"
 
-# Run backend
-run-backend:
-	@echo "Running backend..."
-	cargo run -p backend
+# Setup local development environment
+setup:
+	@echo "Setting up local development..."
+	npm run setup
 
-# Build frontend WASM
-build-frontend:
-	@echo "Building frontend..."
-	cd frontend && wasm-pack build --target web --out-dir ../backend/static/wasm
-
-# Development server with watch
-dev:
-	@echo "Starting development server..."
-	cargo watch -x "run -p backend"
-
-# CI pipeline - this is what GitHub Actions will run
-ci: fmt clippy test build
-	@echo "CI checks passed!"
-
-# Install development dependencies
-install-deps:
-	@echo "Installing development dependencies..."
-	cargo install cargo-watch
-	cargo install wasm-pack
-	cargo install sqlx-cli --no-default-features --features sqlite
-
-# Setup database
-setup-db:
-	@echo "Setting up database..."
-	cd backend && sqlx database create
-	cd backend && sqlx migrate run
-
-# Lint TOML files
-lint-toml:
-	@echo "Checking TOML files..."
-	@command -v taplo >/dev/null 2>&1 || (echo "Installing taplo..." && cargo install taplo-cli --locked)
-	taplo fmt --check
-
-# Security audit
-audit:
-	@echo "Running security audit..."
-	# Allow proc-macro-error warning (unmaintained, not a vulnerability)
-	# Allow RSA vulnerability in sqlx-mysql (we only use SQLite)
-	cargo audit --ignore RUSTSEC-2024-0370 --ignore RUSTSEC-2023-0071
-
-# Full check - everything
-full-check: fmt lint-toml clippy test audit build
-	@echo "All checks passed!"
+# Run checks before committing
+pre-commit: check
+	@echo "Ready to commit!"
