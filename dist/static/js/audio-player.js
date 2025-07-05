@@ -221,7 +221,15 @@ class AudioPlayer {
     const albumArtElement = document.querySelector('.album-art');
     if (track.cover_art_path) {
       // If we have album art, load it from the API
-      albumArtElement.src = `https://api.navicore.tech/api/v1/tracks/${track.id}/cover`;
+      const coverUrl = `https://api.navicore.tech/api/v1/tracks/${track.id}/cover`;
+      albumArtElement.src = coverUrl;
+      
+      // Add error handler to detect loading failures
+      albumArtElement.onerror = () => {
+        console.error(`Failed to load album art from: ${coverUrl}`);
+        console.error(`Track has cover_art_path: ${track.cover_art_path}`);
+        albumArtElement.src = '/static/images/default-album.svg';
+      };
     } else {
       // Use default album art
       albumArtElement.src = '/static/images/default-album.svg';

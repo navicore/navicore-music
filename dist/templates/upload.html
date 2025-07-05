@@ -256,9 +256,15 @@
                 if (coverResponse.ok) {
                     const coverResult = await coverResponse.json();
                     coverArtPath = coverResult.path;
+                    console.log('Cover art uploaded successfully:', coverArtPath);
+                } else {
+                    const errorText = await coverResponse.text();
+                    console.error('Cover upload failed:', coverResponse.status, errorText);
+                    alert(`Failed to upload cover art: ${errorText}`);
                 }
             } catch (error) {
                 console.error('Failed to upload cover art:', error);
+                alert('Failed to upload cover art: ' + error.message);
             }
         }
         
@@ -288,6 +294,11 @@
                     const result = await response.json();
                     uploadedTracks.push(result.track);
                     uploadedCount++;
+                    
+                    // Debug: Check if cover art was included
+                    if (coverArtPath) {
+                        console.log(`Track ${result.track.title} uploaded with cover art: ${result.track.cover_art_path}`);
+                    }
                 }
             } catch (error) {
                 console.error(`Failed to upload ${track.name}:`, error);

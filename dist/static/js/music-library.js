@@ -26,6 +26,17 @@ window.initializeTrackList = function() {
         return res.json();
     })
     .then(data => {
+        // Debug: Check if any tracks have cover_art_path
+        const tracksWithCovers = (data.tracks || []).filter(t => t.cover_art_path);
+        if (tracksWithCovers.length > 0) {
+            console.log(`Found ${tracksWithCovers.length} tracks with cover art:`, tracksWithCovers.map(t => ({
+                title: t.title,
+                album: t.album,
+                cover_art_path: t.cover_art_path
+            })));
+        } else {
+            console.log('No tracks have cover_art_path set');
+        }
         allTracks = data.tracks || [];
         renderLibrary();
         
@@ -271,7 +282,7 @@ window.renderLibrary = function() {
                                 '/static/images/default-album.svg'}" 
                                  alt="${album.album}" 
                                  class="w-full h-full object-cover"
-                                 onerror="this.src='/static/images/default-album.svg'">
+                                 onerror="console.error('Album cover failed to load for:', '${album.album}', 'Path:', '${album.tracks[0].cover_art_path}'); this.src='/static/images/default-album.svg'">
                         </div>
                         <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
                         <p class="text-xs opacity-70 line-clamp-1">${album.artist}</p>
