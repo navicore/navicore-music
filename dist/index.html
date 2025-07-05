@@ -285,14 +285,13 @@
             }
         });
         
-        // Load initial content based on URL
-        document.addEventListener('DOMContentLoaded', () => {
-            const path = window.location.pathname;
+        // Handle hash changes (including on page load)
+        function handleHashChange() {
             const hash = window.location.hash;
             
-            if (path === '/#home' || hash === '#home') {
+            if (hash === '#home') {
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
-            } else if (path === '/#upload' || hash === '#upload') {
+            } else if (hash === '#upload') {
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
             } else if (hash.startsWith('#album/')) {
                 // Direct album link
@@ -304,16 +303,22 @@
                 const trackId = hash.substring(7);
                 window.currentTrackToPlay = trackId;
                 htmx.ajax('GET', '/templates/track-list.html', '#main-content');
-            } else if (path === '/' || path === '/index.html') {
-                // We're on the music page, initialize after content loads
-                setTimeout(() => {
-                    const libraryContainer = document.getElementById('library-container');
-                    if (libraryContainer && typeof initializeTrackList === 'function') {
-                        initializeTrackList();
-                    }
-                }, 500);
+            } else {
+                // Default to music library
+                const libraryContainer = document.getElementById('library-container');
+                if (!libraryContainer) {
+                    htmx.ajax('GET', '/templates/track-list.html', '#main-content');
+                }
             }
-            window.updateActiveNav(path);
+        }
+        
+        // Listen for hash changes
+        window.addEventListener('hashchange', handleHashChange);
+        
+        // Load initial content based on URL
+        document.addEventListener('DOMContentLoaded', () => {
+            handleHashChange();
+            window.updateActiveNav(window.location.pathname);
             
             // Restore drawer state from localStorage
             const drawerState = localStorage.getItem('drawer-state');

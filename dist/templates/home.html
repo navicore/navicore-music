@@ -132,14 +132,11 @@
             
             const albumsHtml = recentAlbums.map(([key, album]) => {
                 const encodedKey = encodeURIComponent(key);
-                const escapedKey = key.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
                 return `
                     <a href="/#album/${encodedKey}"
                        class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer block"
-                       onclick="event.preventDefault(); if (window.navigateToAlbum) { window.navigateToAlbum(decodeURIComponent('${encodedKey}')); } else { window.location.href = this.href; }"
                        oncontextmenu="event.preventDefault(); copyAlbumLink(decodeURIComponent('${encodedKey}'))"
-                       data-album-key="${key.replace(/"/g, '&quot;')}"
-                       title="Right-click to copy link">
+                       title="Click to view album • Right-click to copy link">
                         <div class="card-body p-4">
                             <div class="aspect-square bg-base-300 rounded mb-2"></div>
                             <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
