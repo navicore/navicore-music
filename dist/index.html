@@ -179,6 +179,7 @@
             
             if (hash === '#home') {
                 console.log('Loading home page');
+                console.trace('Home page load stack trace');
                 currentLoadedPage = 'home';
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
                 window.updateActiveNav('#home');
@@ -231,7 +232,8 @@
                 window.updateActiveNav('#music');
             } else {
                 // Default to home page
-                console.log('No specific hash match, loading home');
+                console.log('No specific hash match, loading home for hash:', hash);
+                console.trace('Default home page load');
                 currentLoadedPage = 'home';
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
                 window.updateActiveNav('#home');
@@ -239,8 +241,9 @@
         }
         
         // Listen for hash changes
-        window.addEventListener('hashchange', () => {
-            console.log('hashchange event fired!');
+        window.addEventListener('hashchange', (event) => {
+            console.log('hashchange event fired! Old URL:', event.oldURL, 'New URL:', event.newURL);
+            console.log('Current hash:', window.location.hash);
             window.handleHashChange();
         });
         
@@ -312,6 +315,10 @@
         }
         
         // HTMX event handlers
+        document.body.addEventListener('htmx:beforeRequest', (event) => {
+            console.log('HTMX beforeRequest:', event.detail.path, 'target:', event.detail.target);
+        });
+        
         document.body.addEventListener('htmx:configRequest', (event) => {
             event.detail.headers['Content-Type'] = 'application/json';
             // Update API URLs to use our backend
@@ -321,9 +328,14 @@
         });
         
         document.body.addEventListener('htmx:afterSwap', (event) => {
-            console.log('HTMX afterSwap fired, target:', event.detail.target.id);
+            console.log('HTMX afterSwap fired, target:', event.detail.target.id, 'URL:', event.detail.pathInfo.path);
             // This fires after HTMX swaps content into the DOM
             if (event.detail.target.id === 'main-content') {
+                // Log what was just loaded
+                const mainContent = document.getElementById('main-content');
+                const firstText = mainContent ? mainContent.textContent.substring(0, 50) : 'empty';
+                console.log('Main content now contains:', firstText);
+                
                 const libraryContainer = document.getElementById('library-container');
                 console.log('Library container found:', !!libraryContainer, 'initializeTrackList available:', !!window.initializeTrackList);
                 if (libraryContainer && window.initializeTrackList) {
