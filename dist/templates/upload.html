@@ -291,7 +291,12 @@
         document.getElementById('upload-progress').classList.add('hidden');
         document.getElementById('upload-results').classList.remove('hidden');
         
-        if (success) {
+        if (success && uploadedTracks.length > 0) {
+            // Get album info from the first uploaded track
+            const firstTrack = uploadedTracks[0];
+            const albumKey = `${firstTrack.artist}::${firstTrack.album}`;
+            const encodedAlbumKey = encodeURIComponent(albumKey);
+            
             document.getElementById('upload-results').innerHTML = `
                 <div class="alert alert-success">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -303,13 +308,32 @@
                     </div>
                 </div>
                 <div class="mt-6 flex gap-4">
-                    <button class="btn btn-primary"
-                            hx-get="/templates/track-list.html" 
-                            hx-target="#main-content" 
-                            hx-push-url="/"
-                            onclick="updateActiveNav('/')">
-                        Go to Music Library
+                    <a href="/#album/${encodedAlbumKey}"
+                       class="btn btn-primary"
+                       onclick="event.preventDefault(); if (window.navigateToAlbum) { window.navigateToAlbum('${albumKey.replace(/'/g, "\\'")}'); } else { window.location.href = '/#album/${encodedAlbumKey}'; }">
+                        View "${firstTrack.album}"
+                    </a>
+                    <button class="btn btn-ghost" onclick="resetUploadForm()">
+                        Upload More
                     </button>
+                </div>
+            `;
+        } else if (success) {
+            // Success but no tracks info
+            document.getElementById('upload-results').innerHTML = `
+                <div class="alert alert-success">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div>
+                        <h3 class="font-bold">Upload Successful!</h3>
+                        <p>${result.message || 'Your music has been added to the library.'}</p>
+                    </div>
+                </div>
+                <div class="mt-6 flex gap-4">
+                    <a href="/" class="btn btn-primary">
+                        Go to Music Library
+                    </a>
                     <button class="btn btn-ghost" onclick="resetUploadForm()">
                         Upload More
                     </button>
