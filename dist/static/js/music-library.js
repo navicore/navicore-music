@@ -142,8 +142,7 @@ function renderLibrary() {
                  title="Right-click to copy album link">
                 <div class="card-body">
                     <div class="flex justify-between items-start">
-                        <a href="/#album/${encodeURIComponent(key)}" 
-                           onclick="event.preventDefault(); event.stopPropagation(); updateUrlAndView('album', '${key.replace(/'/g, "\\\\'")}')"
+                        <a href="#album/${encodeURIComponent(key)}" 
                            class="block hover:opacity-80 transition-opacity cursor-pointer">
                             <h3 class="card-title text-xl">${album.album}</h3>
                             <p class="text-base-content/70">${album.artist}</p>
@@ -176,9 +175,8 @@ function renderLibrary() {
                     <!-- Track list -->
                     <div class="mt-4 space-y-1">
                         ${album.tracks.map((track, index) => `
-                            <a href="/#track/${track.id}"
+                            <a href="#track/${track.id}"
                                class="flex items-center gap-3 p-2 rounded hover:bg-base-300 transition-colors cursor-pointer group block"
-                               onclick="event.preventDefault(); updateUrlAndView('track', '${track.id}')"
                                oncontextmenu="event.preventDefault(); copyTrackLink('${track.id}')"
                                title="Right-click to copy track link">
                                 <span class="text-sm w-6 text-base-content/50">${track.track_number || index + 1}</span>
@@ -572,9 +570,8 @@ function renderSingleAlbum(albumObj, albumKey) {
                 <!-- Track list -->
                 <div class="mt-6 space-y-1">
                     ${album.tracks.map((track, index) => `
-                        <a href="/#track/${track.id}"
+                        <a href="#track/${track.id}"
                            class="flex items-center gap-3 p-3 rounded hover:bg-base-300 transition-colors cursor-pointer group block"
-                           onclick="event.preventDefault(); updateUrlAndView('track', '${track.id}')"
                            oncontextmenu="event.preventDefault(); copyTrackLink('${track.id}')"
                            title="Right-click to copy track link">
                             <span class="text-lg font-semibold w-8">${track.track_number || index + 1}</span>
@@ -678,10 +675,10 @@ function showToast(message) {
 // Update URL and view when clicking albums/tracks
 function updateUrlAndView(type, id) {
     if (type === 'album') {
-        // Navigate to the album using the existing navigation function
-        window.navigateToAlbum(id);
+        console.log('updateUrlAndView: navigating to album', id);
+        window.location.hash = 'album/' + encodeURIComponent(id);
     } else if (type === 'track') {
-        // Navigate to the track using the existing navigation function
-        window.navigateToTrack(id);
+        console.log('updateUrlAndView: navigating to track', id);
+        window.location.hash = 'track/' + id;
     }
 }

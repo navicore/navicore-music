@@ -196,69 +196,18 @@
         
         // Navigate to a specific album
         window.navigateToAlbum = function(albumKey) {
-            
+            console.log('navigateToAlbum called with:', albumKey);
             // Update URL using hash
             window.location.hash = 'album/' + encodeURIComponent(albumKey);
-            
-            // Check if we're on a different page (like home)
-            const currentContent = document.getElementById('main-content');
-            const isOnMusicPage = currentContent && currentContent.querySelector('#library-container');
-            
-            if (isOnMusicPage) {
-                // Already on music page, just show the album
-                if (window.showAlbumDetails) {
-                    window.showAlbumDetails(albumKey);
-                }
-            } else {
-                // Need to load music page first
-                window.currentAlbumToView = albumKey;
-                
-                htmx.ajax('GET', '/templates/track-list.html', {
-                    target: '#main-content',
-                    swap: 'innerHTML'
-                }).then(() => {
-                    window.updateActiveNav('/');
-                    // Wait a bit for the page to initialize
-                    setTimeout(() => {
-                        if (window.showAlbumDetails) {
-                            window.showAlbumDetails(albumKey);
-                        }
-                    }, 500);
-                });
-            }
+            // The hashchange event will handle the rest
         };
         
         // Navigate to a specific track  
         window.navigateToTrack = function(trackId) {
+            console.log('navigateToTrack called with:', trackId);
             // Update URL using hash
             window.location.hash = 'track/' + trackId;
-            
-            // Check if we're on a different page (like home)
-            const currentContent = document.getElementById('main-content');
-            const isOnMusicPage = currentContent && currentContent.querySelector('#library-container');
-            
-            if (isOnMusicPage) {
-                // Already on music page, just play the track
-                if (window.playTrack) {
-                    window.playTrack(trackId);
-                }
-            } else {
-                // Need to load music page first
-                window.currentTrackToPlay = trackId;
-                
-                htmx.ajax('GET', '/templates/track-list.html', {
-                    target: '#main-content',
-                    swap: 'innerHTML'
-                }).then(() => {
-                    window.updateActiveNav('/');
-                    // Wait a bit for the page to initialize
-                    setTimeout(() => {
-                        if (window.playTrack) {
-                            window.playTrack(trackId);
-                        }
-                    }, 500);
-                });
-            }
+            // The hashchange event will handle the rest
         };
         
         // Handle browser back/forward
@@ -293,35 +242,39 @@
             if (hash === '#home') {
                 console.log('Loading home page');
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
+                window.updateActiveNav('#home');
             } else if (hash === '#upload') {
                 console.log('Loading upload page');
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
+                window.updateActiveNav('#upload');
             } else if (hash.startsWith('#album/')) {
                 // Direct album link
                 const albumKey = decodeURIComponent(hash.substring(7));
                 console.log('Loading album:', albumKey);
                 window.currentAlbumToView = albumKey;
                 
-                // Force reload of track list
-                const mainContent = document.getElementById('main-content');
-                mainContent.innerHTML = '<div class="flex items-center justify-center h-64"><span class="loading loading-spinner loading-lg"></span></div>';
-                
-                htmx.ajax('GET', '/templates/track-list.html', '#main-content').then(() => {
-                    console.log('Track list loaded for album');
+                // Load the music library page
+                htmx.ajax('GET', '/templates/track-list.html', {
+                    target: '#main-content',
+                    swap: 'innerHTML'
                 });
+                window.updateActiveNav('/');
             } else if (hash.startsWith('#track/')) {
                 // Direct track link
                 const trackId = hash.substring(7);
+                console.log('Loading track:', trackId);
                 window.currentTrackToPlay = trackId;
                 
-                // Force reload of track list
-                const mainContent = document.getElementById('main-content');
-                mainContent.innerHTML = '<div class="flex items-center justify-center h-64"><span class="loading loading-spinner loading-lg"></span></div>';
-                
-                htmx.ajax('GET', '/templates/track-list.html', '#main-content');
+                // Load the music library page
+                htmx.ajax('GET', '/templates/track-list.html', {
+                    target: '#main-content',
+                    swap: 'innerHTML'
+                });
+                window.updateActiveNav('/');
             } else {
                 // Default to music library
                 htmx.ajax('GET', '/templates/track-list.html', '#main-content');
+                window.updateActiveNav('/');
             }
         }
         
@@ -331,22 +284,7 @@
             window.handleHashChange();
         });
         
-        // Also catch clicks on album/track links
-        document.addEventListener('click', (e) => {
-            const link = e.target.closest('a');
-            if (link && link.href) {
-                const url = new URL(link.href);
-                console.log('Link clicked:', url.hash);
-                if (url.hash.startsWith('#album/') || url.hash.startsWith('#track/')) {
-                    console.log('Album/track link clicked, hash:', url.hash);
-                    // If the hash is already the same, manually trigger the handler
-                    if (window.location.hash === url.hash) {
-                        console.log('Hash is the same, manually calling handler');
-                        window.handleHashChange();
-                    }
-                }
-            }
-        });
+        // Remove the click event listener - let the browser handle hash navigation naturally
         
         // Load initial content based on URL
         document.addEventListener('DOMContentLoaded', () => {

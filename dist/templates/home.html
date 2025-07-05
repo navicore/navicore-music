@@ -42,16 +42,6 @@
         </div>
     </div>
 
-    <!-- Recent Albums -->
-    <div class="mb-12">
-        <h2 class="text-2xl font-bold mb-6">Recent Albums</h2>
-        <div id="recent-albums" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <div class="text-center text-base-content/50">
-                <span class="loading loading-spinner loading-lg"></span>
-                <p class="mt-2">Loading albums...</p>
-            </div>
-        </div>
-    </div>
 
     <!-- Quick Actions -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -112,42 +102,6 @@
             document.getElementById('album-count').textContent = albums.size;
             document.getElementById('track-count').textContent = tracks.length;
             document.getElementById('total-duration').textContent = `${hours}h ${minutes}m`;
-            
-            // Show recent albums (last 6)
-            const albumsMap = {};
-            tracks.forEach(track => {
-                const key = `${track.artist}::${track.album}`;
-                if (!albumsMap[key]) {
-                    albumsMap[key] = {
-                        artist: track.artist,
-                        album: track.album,
-                        year: track.year
-                    };
-                }
-            });
-            
-            const recentAlbums = Object.entries(albumsMap)
-                .slice(-6)
-                .reverse();
-            
-            const albumsHtml = recentAlbums.map(([key, album]) => {
-                const encodedKey = encodeURIComponent(key);
-                return `
-                    <div class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer"
-                         onclick="navigateToAlbumDirect('${key.replace(/'/g, "\\\\'")}')"
-                         oncontextmenu="event.preventDefault(); copyAlbumLink(decodeURIComponent('${encodedKey}'))"
-                         title="Click to view album • Right-click to copy link">
-                        <div class="card-body p-4">
-                            <div class="aspect-square bg-base-300 rounded mb-2"></div>
-                            <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
-                            <p class="text-xs opacity-70">${album.artist}</p>
-                        </div>
-                    </a>
-                `;
-            }).join('');
-            
-            document.getElementById('recent-albums').innerHTML = albumsHtml || 
-                '<p class="col-span-full text-center text-base-content/50">No albums yet</p>';
         })
         .catch(err => {
             console.error('Failed to load stats:', err);
