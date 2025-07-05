@@ -11,6 +11,7 @@ class AudioPlayer {
     this.analyser = null;
     this.audioContext = null;
     this.source = null;
+    this.saveTimer = null;
     
     this.init();
   }
@@ -20,6 +21,7 @@ class AudioPlayer {
     this.attachEventListeners();
     this.applyTheme(this.currentTheme);
     this.setupAudioRouting();
+    this.restorePlaybackState();
   }
   
   createPlayerElement() {
@@ -217,6 +219,9 @@ class AudioPlayer {
     if (track.album_art) {
       document.querySelector('.album-art').src = track.album_art;
     }
+    
+    // Save state
+    this.savePlaybackState();
   }
   
   togglePlay() {
@@ -242,6 +247,9 @@ class AudioPlayer {
     this.isPlaying = true;
     document.querySelector('.play-icon').style.display = 'none';
     document.querySelector('.pause-icon').style.display = 'block';
+    
+    // Start periodic state saving
+    this.startStateSaving();
   }
   
   pause() {
@@ -249,6 +257,10 @@ class AudioPlayer {
     this.isPlaying = false;
     document.querySelector('.play-icon').style.display = 'block';
     document.querySelector('.pause-icon').style.display = 'none';
+    
+    // Stop periodic saving and do one final save
+    this.stopStateSaving();
+    this.savePlaybackState();
   }
   
   previous() {
@@ -284,6 +296,7 @@ class AudioPlayer {
     if (tracks.length > 0) {
       this.loadTrack(tracks[startIndex]);
     }
+    this.savePlaybackState();
   }
   
   seek(event, offsetSeconds) {
@@ -353,6 +366,86 @@ class AudioPlayer {
     }
     
     this.visualizer.start();
+  }
+  
+  // Playback state persistence methods
+  savePlaybackState() {
+    if (!this.currentTrack) return;
+    
+    const state = {
+      track: this.currentTrack,
+      playlist: this.playlist,
+      currentIndex: this.currentIndex,
+      position: this.audio.currentTime,
+      isPlaying: this.isPlaying,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem('audioPlayerState', JSON.stringify(state));
+  }
+  
+  restorePlaybackState() {
+    const savedState = localStorage.getItem('audioPlayerState');
+    if (!savedState) return;
+    
+    try {
+      const state = JSON.parse(savedState);
+      
+      // Check if state is recent (within last 24 hours)
+      const hoursSinceLastSave = (Date.now() - state.timestamp) / (1000 * 60 * 60);
+      if (hoursSinceLastSave > 24) {
+        localStorage.removeItem('audioPlayerState');
+        return;
+      }
+      
+      // Restore playlist and track
+      if (state.playlist && state.playlist.length > 0) {
+        this.playlist = state.playlist;
+        this.currentIndex = state.currentIndex;
+        this.loadTrack(state.track);
+        
+        // Restore position after metadata loads
+        this.audio.addEventListener('loadedmetadata', () => {
+          if (state.position > 0 && state.position < this.audio.duration) {
+            this.audio.currentTime = state.position;
+          }
+          
+          // Auto-play if it was playing before
+          if (state.isPlaying) {
+            // Give user a moment to interact with page first
+            setTimeout(() => {
+              if (!this.isPlaying) {
+                this.play().catch(e => {
+                  // Auto-play might be blocked by browser
+                  console.log('Auto-play blocked:', e);
+                });
+              }
+            }, 500);
+          }
+        }, { once: true });
+      }
+    } catch (error) {
+      console.error('Failed to restore playback state:', error);
+      localStorage.removeItem('audioPlayerState');
+    }
+  }
+  
+  startStateSaving() {
+    // Save state every 5 seconds while playing
+    if (this.saveTimer) return;
+    
+    this.saveTimer = setInterval(() => {
+      if (this.isPlaying && this.currentTrack) {
+        this.savePlaybackState();
+      }
+    }, 5000);
+  }
+  
+  stopStateSaving() {
+    if (this.saveTimer) {
+      clearInterval(this.saveTimer);
+      this.saveTimer = null;
+    }
   }
 }
 
