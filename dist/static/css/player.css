@@ -15,10 +15,11 @@
   align-items: stretch;
   gap: 1rem;
   padding: 0.5rem;
-  padding-bottom: 0;
+  padding-bottom: 0.5rem;
   transition: transform 0.3s ease;
   z-index: 1000;
   box-sizing: border-box;
+  transform: translateY(-2px); /* Lift player slightly to ensure visibility */
 }
 
 /* Hidden state */
@@ -261,6 +262,7 @@
   .audio-player {
     height: 30vh;
     min-height: 180px;
+    transform: translateY(-2px); /* Maintain lift on smaller screens */
   }
   
   .player-visual {
@@ -278,6 +280,7 @@
     flex-direction: column;
     height: 40vh;
     min-height: 300px;
+    transform: translateY(-2px); /* Maintain lift on mobile */
   }
   
   .player-album {

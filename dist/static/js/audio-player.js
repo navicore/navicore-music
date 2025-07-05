@@ -129,22 +129,28 @@ class AudioPlayer {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
       console.log('Audio context created:', this.audioContext.state);
       
+      // Create analyser
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 256;
+      
       // Only create source if we haven't already
       if (!this.source) {
-        this.analyser = this.audioContext.createAnalyser();
-        this.analyser.fftSize = 256;
-        
         // Create source from audio element (can only be done once!)
         this.source = this.audioContext.createMediaElementSource(this.audio);
         console.log('Audio source created');
         
-        // Connect directly to destination first
-        this.source.connect(this.audioContext.destination);
+        // Create gain node for proper routing
+        const gainNode = this.audioContext.createGain();
+        gainNode.gain.value = 1.0;
         
-        // Also connect to analyser for visualization
+        // Connect: source -> gain -> destination
+        this.source.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        // Also connect source -> analyser (parallel connection)
         this.source.connect(this.analyser);
         
-        console.log('Audio routing complete');
+        console.log('Audio routing complete with gain node');
       }
       
       // Start visualizer
