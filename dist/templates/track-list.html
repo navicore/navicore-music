@@ -7,22 +7,22 @@
                    id="search-input"
                    placeholder="Search albums, artists, or tracks..." 
                    class="input input-bordered w-full" 
-                   onkeyup="handleSearch(event)"/>
+                   onkeyup="window.handleSearch(event)"/>
         </div>
         <div class="btn-group">
-            <button class="btn btn-sm btn-active" onclick="setView('album')" data-view="album">
+            <button class="btn btn-sm btn-active" onclick="window.setView('album')" data-view="album">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
                 </svg>
                 Albums
             </button>
-            <button class="btn btn-sm" onclick="setView('grid')" data-view="grid">
+            <button class="btn btn-sm" onclick="window.setView('grid')" data-view="grid">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
                 </svg>
                 Grid
             </button>
-            <button class="btn btn-sm" onclick="setView('list')" data-view="list">
+            <button class="btn btn-sm" onclick="window.setView('list')" data-view="list">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                 </svg>
@@ -55,7 +55,7 @@
             
             <!-- Add Track Button -->
             <div class="mb-4">
-                <button class="btn btn-sm btn-primary" onclick="showAddTrackForm()">
+                <button class="btn btn-sm btn-primary" onclick="window.showAddTrackForm()">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -82,16 +82,16 @@
                                class="input input-bordered w-full mb-2" 
                                min="1" />
                         <div class="flex gap-2">
-                            <button class="btn btn-sm btn-success" onclick="uploadNewTrack()">Upload</button>
-                            <button class="btn btn-sm btn-ghost" onclick="hideAddTrackForm()">Cancel</button>
+                            <button class="btn btn-sm btn-success" onclick="window.uploadNewTrack()">Upload</button>
+                            <button class="btn btn-sm btn-ghost" onclick="window.hideAddTrackForm()">Cancel</button>
                         </div>
                     </div>
                 </div>
             </div>
             
             <div class="modal-action">
-                <button class="btn btn-error" onclick="deleteAlbum()">Delete Album</button>
-                <button class="btn" onclick="closeEditModal()">Close</button>
+                <button class="btn btn-error" onclick="window.deleteAlbum()">Delete Album</button>
+                <button class="btn" onclick="window.closeEditModal()">Close</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop">
@@ -100,41 +100,4 @@
     </dialog>
 </div>
 
-<!-- Initialize library when this template loads -->
-<script>
-    // Ensure the library loads even if the main event handler misses it
-    (function() {
-        let retryCount = 0;
-        const maxRetries = 50; // 5 seconds total
-        
-        const tryInit = () => {
-            retryCount++;
-            
-            // Check if music-library.js is loaded
-            if (typeof initializeTrackList === 'function') {
-                console.log('Initializing track list from template');
-                initializeTrackList();
-            } else if (retryCount < maxRetries) {
-                console.log(`Waiting for music-library.js to load... (attempt ${retryCount}/${maxRetries})`);
-                setTimeout(tryInit, 100);
-            } else {
-                console.error('Failed to load music library after 5 seconds');
-                // Show error to user
-                const container = document.getElementById('library-container');
-                if (container) {
-                    container.innerHTML = `
-                        <div class="alert alert-error">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>Failed to load music library. Please refresh the page.</span>
-                        </div>
-                    `;
-                }
-            }
-        };
-        
-        // Start trying immediately
-        tryInit();
-    })();
-</script>
+<!-- Pure HTML template - no JavaScript -->

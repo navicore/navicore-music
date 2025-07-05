@@ -1,5 +1,6 @@
 // Music Library Management
 // This file contains all the functions needed for the music library page
+console.log('music-library.js loaded');
 
 // Global state
 let currentView = 'album';
@@ -8,8 +9,18 @@ let searchQuery = '';
 let albums = {};
 let currentAlbumKey = null;
 
+// Pagination settings
+const ITEMS_PER_PAGE = 20; // Albums per page
+let currentPage = 1;
+
 // Initialize track list
 window.initializeTrackList = function() {
+    // Get current page from window if set
+    if (window.currentPage) {
+        currentPage = window.currentPage;
+        delete window.currentPage; // Clean up
+    }
+    
     // Load and display library
     fetch('https://api.navicore.tech/api/v1/tracks')
     .then(res => res.json())
@@ -135,8 +146,30 @@ window.renderLibrary = function() {
             album.tracks.sort((a, b) => (a.track_number || 999) - (b.track_number || 999));
         });
         
-        // Display albums
-        container.innerHTML = '<div class="space-y-6">' + Object.entries(albums).map(([key, album]) => `
+        // Get album entries for pagination
+        const albumEntries = Object.entries(albums);
+        const totalAlbums = albumEntries.length;
+        const totalPages = Math.ceil(totalAlbums / ITEMS_PER_PAGE);
+        
+        // Ensure current page is valid
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+        
+        // Get albums for current page
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalAlbums);
+        const pageAlbums = albumEntries.slice(startIndex, endIndex);
+        
+        // Build album HTML
+        let html = '<div class="space-y-6">';
+        
+        // Add pagination controls at top if needed
+        if (totalPages > 1) {
+            html += renderPaginationControls(currentPage, totalPages, totalAlbums);
+        }
+        
+        // Display albums for current page
+        html += pageAlbums.map(([key, album]) => `
             <div class="card bg-base-200 shadow-xl"
                  oncontextmenu="event.preventDefault(); copyAlbumLink('${key.replace(/'/g, "\\\\'")}')"
                  title="Right-click to copy album link">
@@ -184,7 +217,7 @@ window.renderLibrary = function() {
                                     <span class="text-sm">${track.title}</span>
                                 </div>
                                 <span class="text-sm text-base-content/50">
-                                    ${formatDuration(track.duration)}
+                                    ${window.formatDuration(track.duration)}
                                 </span>
                                 <button class="btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
                                         onclick="event.stopPropagation(); event.preventDefault(); playTrack('${track.id}')">
@@ -197,7 +230,15 @@ window.renderLibrary = function() {
                     </div>
                 </div>
             </div>
-        `).join('') + '</div>';
+        `).join('');
+        
+        // Add pagination controls at bottom if needed
+        if (totalPages > 1) {
+            html += renderPaginationControls(currentPage, totalPages, totalAlbums);
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
     }
     
     window.renderGridView = function(tracks) {
@@ -252,7 +293,7 @@ window.renderLibrary = function() {
                                 <td class="font-semibold">${track.title}</td>
                                 <td>${track.artist}</td>
                                 <td>${track.album}</td>
-                                <td>${formatDuration(track.duration)}</td>
+                                <td>${window.formatDuration(track.duration)}</td>
                                 <td>
                                     <button class="btn btn-xs btn-circle btn-ghost" onclick="playTrack('${track.id}')">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -341,7 +382,7 @@ window.updateTrackList = function(album) {
             <span class="text-lg font-semibold w-8">${track.track_number || '-'}</span>
             <div class="flex-1">
                 <p class="font-semibold">${track.title}</p>
-                <p class="text-sm opacity-70">${formatDuration(track.duration)} • ${formatFileSize(track.file_size)}</p>
+                <p class="text-sm opacity-70">${window.formatDuration(track.duration)} • ${window.formatFileSize(track.file_size)}</p>
             </div>
             <button class="btn btn-sm btn-error btn-outline" 
                     onclick="removeTrack('${track.id}', '${track.title.replace(/'/g, "\\'")}')">
@@ -374,7 +415,7 @@ window.uploadNewTrack = async function() {
     }
     
     const file = fileInput.files[0];
-    const title = titleInput.value || extractTrackName(file.name);
+    const title = titleInput.value || window.extractTrackName(file.name);
     const trackNumber = parseInt(numberInput.value) || album.tracks.length + 1;
     
     // Check file size
@@ -579,7 +620,7 @@ window.renderSingleAlbum = function(albumObj, albumKey) {
                                 <span class="text-base">${track.title}</span>
                             </div>
                             <span class="text-sm text-base-content/50">
-                                ${formatDuration(track.duration)}
+                                ${window.formatDuration(track.duration)}
                             </span>
                             <button class="btn btn-sm btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
                                     onclick="event.stopPropagation(); event.preventDefault(); playTrack('${track.id}')">
@@ -602,12 +643,12 @@ window.copyAlbumLink = function(albumKey) {
     // Try to use the clipboard API
     if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(() => {
-            showToast('Album link copied to clipboard!');
+            window.showToast('Album link copied to clipboard!');
         }).catch(err => {
-            fallbackCopyTextToClipboard(url);
+            window.fallbackCopyTextToClipboard(url);
         });
     } else {
-        fallbackCopyTextToClipboard(url);
+        window.fallbackCopyTextToClipboard(url);
     }
 };
 
@@ -617,12 +658,12 @@ window.copyTrackLink = function(trackId) {
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(() => {
-            showToast('Track link copied to clipboard!');
+            window.showToast('Track link copied to clipboard!');
         }).catch(err => {
-            fallbackCopyTextToClipboard(url);
+            window.fallbackCopyTextToClipboard(url);
         });
     } else {
-        fallbackCopyTextToClipboard(url);
+        window.fallbackCopyTextToClipboard(url);
     }
 };
 
@@ -647,9 +688,9 @@ window.fallbackCopyTextToClipboard = function(text) {
     
     try {
         document.execCommand('copy');
-        showToast('Link copied to clipboard!');
+        window.showToast('Link copied to clipboard!');
     } catch (err) {
-        showToast('Failed to copy link');
+        window.showToast('Failed to copy link');
     }
     
     document.body.removeChild(textArea);
@@ -682,3 +723,78 @@ window.updateUrlAndView = function(type, id) {
         window.location.hash = 'track/' + id;
     }
 }
+
+// Pagination controls renderer
+function renderPaginationControls(currentPage, totalPages, totalItems) {
+    let html = '<div class="flex justify-center items-center gap-2 my-6">';
+    
+    // Previous button
+    if (currentPage > 1) {
+        html += `<button class="btn btn-sm" onclick="window.goToPage(${currentPage - 1})">← Previous</button>`;
+    } else {
+        html += `<button class="btn btn-sm btn-disabled">← Previous</button>`;
+    }
+    
+    // Page numbers
+    html += '<div class="flex gap-1">';
+    
+    // Always show first page
+    if (currentPage > 3) {
+        html += `<button class="btn btn-sm btn-outline" onclick="window.goToPage(1)">1</button>`;
+        if (currentPage > 4) {
+            html += `<span class="px-2">...</span>`;
+        }
+    }
+    
+    // Show pages around current
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+        if (i === currentPage) {
+            html += `<button class="btn btn-sm btn-active">${i}</button>`;
+        } else {
+            html += `<button class="btn btn-sm btn-outline" onclick="window.goToPage(${i})">${i}</button>`;
+        }
+    }
+    
+    // Always show last page
+    if (currentPage < totalPages - 2) {
+        if (currentPage < totalPages - 3) {
+            html += `<span class="px-2">...</span>`;
+        }
+        html += `<button class="btn btn-sm btn-outline" onclick="window.goToPage(${totalPages})">${totalPages}</button>`;
+    }
+    
+    html += '</div>';
+    
+    // Next button
+    if (currentPage < totalPages) {
+        html += `<button class="btn btn-sm" onclick="window.goToPage(${currentPage + 1})">Next →</button>`;
+    } else {
+        html += `<button class="btn btn-sm btn-disabled">Next →</button>`;
+    }
+    
+    // Item count
+    html += `<span class="text-sm text-base-content/70 ml-4">${totalItems} albums</span>`;
+    
+    html += '</div>';
+    return html;
+}
+
+// Navigate to a specific page
+window.goToPage = function(page) {
+    currentPage = page;
+    // Update URL with page number
+    if (page > 1) {
+        window.location.hash = `music/page/${page}`;
+    } else {
+        window.location.hash = 'music';
+    }
+    renderLibrary();
+}
+
+// Confirm functions are attached
+console.log('music-library.js functions attached:', {
+    initializeTrackList: typeof window.initializeTrackList,
+    renderLibrary: typeof window.renderLibrary,
+    showAlbumDetails: typeof window.showAlbumDetails,
+    playTrack: typeof window.playTrack
+});
