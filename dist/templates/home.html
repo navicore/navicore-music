@@ -1,0 +1,155 @@
+<!-- Home page content - loaded via HTMX -->
+<div class="container mx-auto p-8 max-w-6xl">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold text-primary mb-4">Navicore Music</h1>
+        <p class="text-xl text-base-content/70">Your Personal Music Streaming Service</p>
+    </div>
+    
+    <!-- Stats -->
+    <div class="stats shadow w-full mb-8">
+        <div class="stat">
+            <div class="stat-figure text-primary">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Albums</div>
+            <div class="stat-value" id="album-count">-</div>
+            <div class="stat-desc">In your library</div>
+        </div>
+        
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Tracks</div>
+            <div class="stat-value" id="track-count">-</div>
+            <div class="stat-desc">Total songs</div>
+        </div>
+        
+        <div class="stat">
+            <div class="stat-figure text-accent">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Duration</div>
+            <div class="stat-value" id="total-duration">-</div>
+            <div class="stat-desc">Of music</div>
+        </div>
+    </div>
+
+    <!-- Recent Albums -->
+    <div class="mb-12">
+        <h2 class="text-2xl font-bold mb-6">Recent Albums</h2>
+        <div id="recent-albums" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div class="text-center text-base-content/50">
+                <span class="loading loading-spinner loading-lg"></span>
+                <p class="mt-2">Loading albums...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="card bg-primary text-primary-content cursor-pointer hover:shadow-xl transition-shadow"
+             hx-get="/templates/track-list.html" 
+             hx-target="#main-content" 
+             hx-push-url="/"
+             hx-on::after-request="updateActiveNav('/')">
+            <div class="card-body text-center">
+                <h2 class="card-title justify-center text-2xl mb-4">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
+                    </svg>
+                    Browse Music
+                </h2>
+                <p>Explore your music library</p>
+            </div>
+        </div>
+
+        <div class="card bg-secondary text-secondary-content cursor-pointer hover:shadow-xl transition-shadow"
+             hx-get="/templates/upload.html" 
+             hx-target="#main-content" 
+             hx-push-url="/upload.html"
+             hx-on::after-request="updateActiveNav('/upload.html')">
+            <div class="card-body text-center">
+                <h2 class="card-title justify-center text-2xl mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    Upload Music
+                </h2>
+                <p>Add new albums to your library</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load stats when home page loads
+    fetch('https://api.navicore.tech/api/v1/tracks')
+        .then(res => res.json())
+        .then(data => {
+            const tracks = data.tracks || [];
+            
+            // Count unique albums
+            const albums = new Set();
+            tracks.forEach(track => {
+                albums.add(`${track.artist}::${track.album}`);
+            });
+            
+            // Calculate total duration
+            const totalSeconds = tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            
+            // Update stats
+            document.getElementById('album-count').textContent = albums.size;
+            document.getElementById('track-count').textContent = tracks.length;
+            document.getElementById('total-duration').textContent = `${hours}h ${minutes}m`;
+            
+            // Show recent albums (last 6)
+            const albumsMap = {};
+            tracks.forEach(track => {
+                const key = `${track.artist}::${track.album}`;
+                if (!albumsMap[key]) {
+                    albumsMap[key] = {
+                        artist: track.artist,
+                        album: track.album,
+                        year: track.year
+                    };
+                }
+            });
+            
+            const recentAlbums = Object.entries(albumsMap)
+                .slice(-6)
+                .reverse();
+            
+            const albumsHtml = recentAlbums.map(([key, album]) => `
+                <div class="card bg-base-200 hover:shadow-lg transition-shadow cursor-pointer"
+                     hx-get="/templates/track-list.html" 
+                     hx-target="#main-content" 
+                     hx-push-url="/#album"
+                     hx-on::after-request="updateActiveNav('/'); setTimeout(() => setView('album'), 100);">
+                    <div class="card-body p-4">
+                        <div class="aspect-square bg-base-300 rounded mb-2"></div>
+                        <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
+                        <p class="text-xs opacity-70">${album.artist}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('recent-albums').innerHTML = albumsHtml || 
+                '<p class="col-span-full text-center text-base-content/50">No albums yet</p>';
+        })
+        .catch(err => {
+            console.error('Failed to load stats:', err);
+            document.getElementById('album-count').textContent = '0';
+            document.getElementById('track-count').textContent = '0';
+            document.getElementById('total-duration').textContent = '0h 0m';
+        });
+</script>

@@ -76,25 +76,45 @@
             <label for="drawer-toggle" class="drawer-overlay"></label>
             <div class="w-64 min-h-full bg-base-200 p-4">
                 <!-- Logo -->
-                <div class="mb-8 px-2">
+                <div class="mb-8 px-2 flex items-center justify-between">
                     <h1 class="text-2xl font-bold text-primary">Navicore Music</h1>
+                    <button class="btn btn-ghost btn-sm lg:hidden" onclick="toggleDrawer()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
                 </div>
                 
                 <!-- Navigation -->
                 <nav class="space-y-2">
-                    <a href="/home.html" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-300 transition-colors">
+                    <a href="/home.html" 
+                       hx-get="/templates/home.html" 
+                       hx-target="#main-content" 
+                       hx-push-url="/home.html"
+                       class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-300 transition-colors"
+                       data-path="/home.html">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
                         </svg>
                         <span>Home</span>
                     </a>
-                    <a href="/" class="flex items-center gap-3 px-4 py-2 rounded-lg bg-base-300">
+                    <a href="/" 
+                       hx-get="/templates/track-list.html" 
+                       hx-target="#main-content" 
+                       hx-push-url="/"
+                       class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg bg-base-300"
+                       data-path="/">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
                         </svg>
                         <span>Music</span>
                     </a>
-                    <a href="/upload.html" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-300 transition-colors">
+                    <a href="/upload.html" 
+                       hx-get="/templates/upload.html" 
+                       hx-target="#main-content" 
+                       hx-push-url="/upload.html"
+                       class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-300 transition-colors"
+                       data-path="/upload.html">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
@@ -150,6 +170,62 @@
         } else {
             initializePlayer();
         }
+        
+        // Handle navigation state
+        function updateActiveNav(path) {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.dataset.path === path) {
+                    link.classList.add('bg-base-300');
+                } else {
+                    link.classList.remove('bg-base-300');
+                }
+            });
+        }
+        
+        // Handle browser back/forward
+        window.addEventListener('popstate', (event) => {
+            const path = window.location.pathname;
+            updateActiveNav(path);
+        });
+        
+        // Update active nav after HTMX swaps
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            if (event.detail.target.id === 'main-content') {
+                const path = window.location.pathname;
+                updateActiveNav(path);
+            }
+        });
+        
+        // Load initial content based on URL
+        document.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname;
+            if (path === '/home.html') {
+                htmx.ajax('GET', '/templates/home.html', '#main-content');
+            } else if (path === '/upload.html') {
+                htmx.ajax('GET', '/templates/upload.html', '#main-content');
+            }
+            updateActiveNav(path);
+            
+            // Restore drawer state from localStorage
+            const drawerState = localStorage.getItem('drawer-state');
+            if (drawerState === 'closed') {
+                document.getElementById('drawer-toggle').checked = false;
+            }
+        });
+        
+        // Toggle drawer and save state
+        function toggleDrawer() {
+            const drawerToggle = document.getElementById('drawer-toggle');
+            drawerToggle.checked = !drawerToggle.checked;
+            localStorage.setItem('drawer-state', drawerToggle.checked ? 'open' : 'closed');
+        }
+        
+        // Auto-close drawer on mobile after navigation
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            if (event.detail.target.id === 'main-content' && window.innerWidth < 1024) {
+                document.getElementById('drawer-toggle').checked = false;
+            }
+        });
     </script>
 </body>
 </html>
