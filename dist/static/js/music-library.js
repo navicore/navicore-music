@@ -1,6 +1,5 @@
 // Music Library Management
 // This file contains all the functions needed for the music library page
-console.log('music-library.js loaded');
 
 // Global state
 let currentView = 'album';
@@ -22,14 +21,11 @@ window.initializeTrackList = function() {
     }
     
     // Load and display library
-    console.log('Fetching tracks from API...');
     fetch('https://api.navicore.tech/api/v1/tracks')
     .then(res => {
-        console.log('API response status:', res.status);
         return res.json();
     })
     .then(data => {
-        console.log('Tracks loaded:', data.tracks?.length || 0, 'tracks');
         allTracks = data.tracks || [];
         renderLibrary();
         
@@ -796,10 +792,3 @@ window.goToPage = function(page) {
     renderLibrary();
 }
 
-// Confirm functions are attached
-console.log('music-library.js functions attached:', {
-    initializeTrackList: typeof window.initializeTrackList,
-    renderLibrary: typeof window.renderLibrary,
-    showAlbumDetails: typeof window.showAlbumDetails,
-    playTrack: typeof window.playTrack
-});

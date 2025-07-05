@@ -132,11 +132,9 @@ class AudioPlayer {
       return;
     }
     
-    console.log('Initializing audio context...');
     
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      console.log('Audio context created:', this.audioContext.state);
       
       // Create analyser
       this.analyser = this.audioContext.createAnalyser();
@@ -146,8 +144,7 @@ class AudioPlayer {
       if (!this.source) {
         // Create source from audio element (can only be done once!)
         this.source = this.audioContext.createMediaElementSource(this.audio);
-        console.log('Audio source created');
-        
+          
         // Create gain node for proper routing
         const gainNode = this.audioContext.createGain();
         gainNode.gain.value = 1.0;
@@ -159,8 +156,7 @@ class AudioPlayer {
         // Also connect source -> analyser (parallel connection)
         this.source.connect(this.analyser);
         
-        console.log('Audio routing complete with gain node');
-      }
+        }
       
       // Start visualizer
       this.startVisualizer();
@@ -207,7 +203,6 @@ class AudioPlayer {
   }
   
   loadTrack(track) {
-    console.log('Loading track:', track.title);
     this.currentTrack = track;
     
     // Important: Set crossOrigin before setting src
@@ -261,7 +256,6 @@ class AudioPlayer {
         // Start periodic state saving
         this.startStateSaving();
       }).catch(error => {
-        console.log('Playback failed:', error);
         this.isPlaying = false;
         throw error;
       });
@@ -436,7 +430,7 @@ class AudioPlayer {
           // Note: Auto-play requires user interaction in modern browsers
           // We'll restore the playing state visually but not actually play
           if (state.isPlaying) {
-            console.log('Track was playing before reload - click play to resume');
+            // Track was playing before reload - click play to resume
           }
         }, { once: true });
       }
