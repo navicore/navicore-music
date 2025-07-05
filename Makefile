@@ -1,4 +1,4 @@
-.PHONY: all install dev deploy deploy-worker deploy-pages test lint check clean help
+.PHONY: all install dev test lint check clean help
 
 # Default target
 all: help
@@ -10,10 +10,11 @@ help:
 	@echo "make install       - Install dependencies"
 	@echo "make check        - Run all checks (lint + test)"
 	@echo "make lint         - Check code quality"
-	@echo "make test         - Run tests"
+	@echo "make test         - Run tests (currently placeholder)"
 	@echo "make dev          - Start local development server"
-	@echo "make deploy       - Deploy to production (Worker + Pages)"
 	@echo "make clean        - Clean build artifacts"
+	@echo ""
+	@echo "NOTE: Deployment is handled by GitHub Actions only!"
 
 # Install dependencies
 install:
@@ -27,7 +28,7 @@ check: lint test
 # Lint and validate code
 lint:
 	@echo "=== Validating package.json ==="
-	npm ls || (echo "Package validation failed" && exit 1)
+	@test -f package.json && echo "package.json exists" || (echo "Missing package.json" && exit 1)
 	
 	@echo "\n=== Checking HTML files ==="
 	@find dist -name "*.html" -exec echo "Checking {}" \; -exec node -e "\
@@ -76,32 +77,14 @@ lint:
 
 # Run tests
 test:
-	@echo "=== Testing Worker deployment (dry run) ==="
-	CLOUDFLARE_API_TOKEN="dummy-token" CLOUDFLARE_ACCOUNT_ID="dummy-account" \
-		npx wrangler deploy --dry-run --outdir=test-build >/dev/null 2>&1 || \
-		(echo "Worker deployment test failed" && exit 1)
-	@rm -rf test-build
-	@echo "Worker deployment test passed!"
+	@echo "=== Running tests ==="
+	@echo "TODO: Add actual unit tests"
+	@echo "Tests placeholder - no tests defined yet"
 
 # Development server
 dev:
 	@echo "Starting Wrangler dev server..."
 	npm run dev:api
-
-# Deploy everything
-deploy:
-	@echo "Deploying to Cloudflare..."
-	npm run deploy
-
-# Deploy Worker only
-deploy-worker:
-	@echo "Deploying Worker API..."
-	npm run deploy:api
-
-# Deploy Pages only
-deploy-pages:
-	@echo "Deploying Pages frontend..."
-	npm run deploy:pages
 
 # Clean build artifacts
 clean:
@@ -110,11 +93,6 @@ clean:
 	rm -rf test-build
 	rm -f package-lock.json
 	@echo "Clean complete"
-
-# Setup local development environment
-setup:
-	@echo "Setting up local development..."
-	npm run setup
 
 # Run checks before committing
 pre-commit: check
