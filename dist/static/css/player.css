@@ -231,6 +231,24 @@
   border-radius: 8px;
 }
 
+.visualizer-toggle {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--player-primary);
+  border-radius: 4px;
+  padding: 0.25rem;
+  color: var(--player-text);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.visualizer-toggle:hover {
+  opacity: 1;
+}
+
 #visualizer {
   width: 100%;
   height: 100%;
