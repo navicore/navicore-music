@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
+    <script>console.log('Very first script - hash is:', window.location.hash);</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Navicore Music</title>
@@ -143,6 +144,7 @@
     <script>
         // Main app initialization - runs immediately
         console.log('Main app script starting');
+        console.log('Initial hash on script load:', window.location.hash);
         
         // Update navigation function
         window.updateActiveNav = function(path) {
