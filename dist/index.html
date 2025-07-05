@@ -351,9 +351,15 @@
             try {
                 await init();
                 console.log('WASM initialized successfully');
-                // TODO: Initialize audio player component
+                
+                // Initialize advanced audio processing
+                if (window.audioPlayer) {
+                    console.log('Upgrading audio player with WASM processor');
+                    // TODO: Connect WASM audio processor to existing player
+                }
             } catch (error) {
                 console.error('Failed to initialize WASM:', error);
+                console.log('Falling back to Web Audio API only');
             }
         }
         
