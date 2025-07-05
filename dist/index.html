@@ -109,12 +109,12 @@
                         </svg>
                         <span>Music</span>
                     </a>
-                    <a href="/upload.html" 
+                    <a href="/#upload" 
                        hx-get="/templates/upload.html" 
                        hx-target="#main-content" 
-                       hx-push-url="/upload.html"
+                       hx-push-url="/#upload"
                        class="nav-link flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-base-300 transition-colors"
-                       data-path="/upload.html">
+                       data-path="/#upload">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
@@ -176,8 +176,17 @@
         
         // Handle navigation state
         function updateActiveNav(path) {
+            // Handle both regular paths and hash paths
+            const currentPath = path || window.location.pathname + window.location.hash;
+            
             document.querySelectorAll('.nav-link').forEach(link => {
-                if (link.dataset.path === path) {
+                const linkPath = link.dataset.path;
+                // Check if paths match, considering both / and /#home as home
+                const isActive = (linkPath === currentPath) || 
+                               (linkPath === '/' && currentPath === '/index.html') ||
+                               (linkPath === '/#home' && (currentPath === '/#home' || currentPath === '/home.html'));
+                
+                if (isActive) {
                     link.classList.add('bg-base-300');
                 } else {
                     link.classList.remove('bg-base-300');
@@ -204,7 +213,7 @@
             const path = window.location.pathname;
             if (path === '/#home' || window.location.hash === '#home') {
                 htmx.ajax('GET', '/templates/home.html', '#main-content');
-            } else if (path === '/upload.html') {
+            } else if (path === '/#upload' || window.location.hash === '#upload') {
                 htmx.ajax('GET', '/templates/upload.html', '#main-content');
             } else if (path === '/' || path === '/index.html') {
                 // We're on the music page, initialize after content loads
