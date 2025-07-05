@@ -33,11 +33,11 @@
                     
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text">Genre (Optional)</span>
+                            <span class="label-text">Tags (Optional)</span>
                         </label>
                         <input type="text" 
-                               id="genre-input"
-                               placeholder="e.g., Electronic, Jazz" 
+                               id="tags-input"
+                               placeholder="e.g., rock, 90s, live, acoustic" 
                                class="input input-bordered" />
                     </div>
                     
@@ -222,12 +222,12 @@
         try {
             const artist = document.getElementById('artist-input').value;
             const album = document.getElementById('album-input').value;
-            const genre = document.getElementById('genre-input').value;
+            const tags = document.getElementById('tags-input').value;
             const year = document.getElementById('year-input').value;
             const coverInput = document.querySelector('input[name="cover"]');
             const coverFile = coverInput.files[0];
             
-            console.log('Form data:', { artist, album, genre, year, hasCover: !!coverFile, trackCount: selectedTracks.length });
+            console.log('Form data:', { artist, album, tags, year, hasCover: !!coverFile, trackCount: selectedTracks.length });
         
         const tracksToUpload = selectedTracks.filter(t => !t.isLarge);
         
@@ -282,7 +282,7 @@
                 title: track.name,
                 artist: artist,
                 album: album,
-                genre: genre,
+                tags: tags,
                 year: parseInt(year),
                 track_number: track.trackNumber,
                 cover_art_path: coverArtPath
