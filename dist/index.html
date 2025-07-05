@@ -196,46 +196,58 @@
         
         // Navigate to a specific album
         window.navigateToAlbum = function(albumKey) {
-            // Store the album key for the music library to use
-            window.currentAlbumToView = albumKey;
+            // Update URL
+            history.pushState({}, '', '/#album/' + encodeURIComponent(albumKey));
             
-            // Navigate to music page
-            htmx.ajax('GET', '/templates/track-list.html', {
-                target: '#main-content',
-                swap: 'innerHTML'
-            }).then(() => {
-                // Update URL and navigation
-                history.pushState({}, '', '/#album/' + encodeURIComponent(albumKey));
-                window.updateActiveNav('/');
-                
-                // After content loads, show the album
-                setTimeout(() => {
-                    if (typeof showAlbumDetails === 'function') {
-                        showAlbumDetails(albumKey);
-                    }
-                }, 100);
-            });
+            // Check if we're already on the music page
+            const libraryContainer = document.getElementById('library-container');
+            if (libraryContainer && typeof showAlbumDetails === 'function') {
+                // Already on music page, just show the album
+                showAlbumDetails(albumKey);
+            } else {
+                // Need to load music page first
+                window.currentAlbumToView = albumKey;
+                htmx.ajax('GET', '/templates/track-list.html', {
+                    target: '#main-content',
+                    swap: 'innerHTML'
+                }).then(() => {
+                    window.updateActiveNav('/');
+                    // After content loads, show the album
+                    setTimeout(() => {
+                        if (typeof showAlbumDetails === 'function') {
+                            showAlbumDetails(albumKey);
+                        }
+                    }, 100);
+                });
+            }
         };
         
         // Navigate to a specific track
         window.navigateToTrack = function(trackId) {
-            // Similar to album navigation
-            window.currentTrackToPlay = trackId;
+            // Update URL
+            history.pushState({}, '', '/#track/' + trackId);
             
-            htmx.ajax('GET', '/templates/track-list.html', {
-                target: '#main-content',
-                swap: 'innerHTML'
-            }).then(() => {
-                history.pushState({}, '', '/#track/' + trackId);
-                window.updateActiveNav('/');
-                
-                // After content loads, play the track
-                setTimeout(() => {
-                    if (typeof playTrack === 'function') {
-                        playTrack(trackId);
-                    }
-                }, 100);
-            });
+            // Check if we're already on the music page
+            const libraryContainer = document.getElementById('library-container');
+            if (libraryContainer && typeof playTrack === 'function') {
+                // Already on music page, just play the track
+                playTrack(trackId);
+            } else {
+                // Need to load music page first
+                window.currentTrackToPlay = trackId;
+                htmx.ajax('GET', '/templates/track-list.html', {
+                    target: '#main-content',
+                    swap: 'innerHTML'
+                }).then(() => {
+                    window.updateActiveNav('/');
+                    // After content loads, play the track
+                    setTimeout(() => {
+                        if (typeof playTrack === 'function') {
+                            playTrack(trackId);
+                        }
+                    }, 100);
+                });
+            }
         };
         
         // Handle browser back/forward

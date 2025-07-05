@@ -143,8 +143,8 @@ function renderLibrary() {
                 <div class="card-body">
                     <div class="flex justify-between items-start">
                         <a href="/#album/${encodeURIComponent(key)}" 
-                           onclick="event.preventDefault(); updateUrlAndView('album', '${key.replace(/'/g, "\\\\'")}')"
-                           class="block hover:opacity-80 transition-opacity">
+                           onclick="event.preventDefault(); event.stopPropagation(); updateUrlAndView('album', '${key.replace(/'/g, "\\\\'")}')"
+                           class="block hover:opacity-80 transition-opacity cursor-pointer">
                             <h3 class="card-title text-xl">${album.album}</h3>
                             <p class="text-base-content/70">${album.artist}</p>
                             <p class="text-sm opacity-70 mt-1">
@@ -487,28 +487,115 @@ function showAlbumDetails(albumKey) {
     // First ensure we're in album view
     setView('album');
     
-    // Filter tracks to show only this album
+    // Parse the album key
     const [artist, album] = albumKey.split('::');
-    searchQuery = ''; // Clear any existing search
     
-    // Scroll to the album if it exists
-    setTimeout(() => {
-        const albumCards = document.querySelectorAll('.card');
-        albumCards.forEach(card => {
-            const cardTitle = card.querySelector('.card-title');
-            const cardArtist = card.querySelector('.text-base-content\\/70');
-            if (cardTitle && cardArtist && 
-                cardTitle.textContent === album && 
-                cardArtist.textContent === artist) {
-                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Add a highlight effect
-                card.classList.add('ring-2', 'ring-primary');
-                setTimeout(() => {
-                    card.classList.remove('ring-2', 'ring-primary');
-                }, 2000);
-            }
-        });
-    }, 100);
+    // Filter the view to show only this album
+    const container = document.getElementById('library-container');
+    if (!container) return;
+    
+    // Find the specific album in our data
+    const albumData = albums[albumKey];
+    if (!albumData) {
+        // Album not found, try to find it in allTracks
+        const albumTracks = allTracks.filter(track => 
+            track.artist === artist && track.album === album
+        );
+        
+        if (albumTracks.length > 0) {
+            // Render just this album
+            const singleAlbum = {
+                [albumKey]: {
+                    artist: artist,
+                    album: album,
+                    year: albumTracks[0].year,
+                    genre: albumTracks[0].genre,
+                    tracks: albumTracks.sort((a, b) => (a.track_number || 999) - (b.track_number || 999))
+                }
+            };
+            renderSingleAlbum(singleAlbum, albumKey);
+        }
+    } else {
+        // Render just this album
+        renderSingleAlbum({ [albumKey]: albumData }, albumKey);
+    }
+}
+
+// Render a single album view
+function renderSingleAlbum(albumObj, albumKey) {
+    const container = document.getElementById('library-container');
+    const [key, album] = Object.entries(albumObj)[0];
+    
+    container.innerHTML = `
+        <div class="mb-4">
+            <button class="btn btn-sm btn-ghost" onclick="history.pushState({}, '', '/'); renderLibrary();">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to all albums
+            </button>
+        </div>
+        <div class="card bg-base-200 shadow-xl"
+             oncontextmenu="event.preventDefault(); copyAlbumLink('${key.replace(/'/g, "\\\\'")}')"
+             title="Right-click to copy album link">
+            <div class="card-body">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="card-title text-2xl">${album.album}</h3>
+                        <p class="text-lg text-base-content/70">${album.artist}</p>
+                        <p class="text-sm opacity-70 mt-1">
+                            ${album.year || 'Unknown year'} 
+                            ${album.genre ? `• ${album.genre}` : ''}
+                            • ${album.tracks.length} tracks
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-sm btn-circle btn-primary" onclick="playAlbum('${key.replace(/'/g, "\\'")}')">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
+                            </svg>
+                        </button>
+                        <button class="btn btn-sm btn-ghost" onclick="editAlbum('${key.replace(/'/g, "\\'")}')">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                        <button class="btn btn-sm btn-ghost" onclick="copyAlbumLink('${key.replace(/'/g, "\\\\'")}')" title="Copy shareable link">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Track list -->
+                <div class="mt-6 space-y-1">
+                    ${album.tracks.map((track, index) => `
+                        <a href="/#track/${track.id}"
+                           class="flex items-center gap-3 p-3 rounded hover:bg-base-300 transition-colors cursor-pointer group block"
+                           onclick="event.preventDefault(); updateUrlAndView('track', '${track.id}')"
+                           oncontextmenu="event.preventDefault(); copyTrackLink('${track.id}')"
+                           title="Right-click to copy track link">
+                            <span class="text-lg font-semibold w-8">${track.track_number || index + 1}</span>
+                            <div class="flex-1">
+                                <span class="text-base">${track.title}</span>
+                            </div>
+                            <span class="text-sm text-base-content/50">
+                                ${formatDuration(track.duration)}
+                            </span>
+                            <button class="btn btn-sm btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onclick="event.stopPropagation(); event.preventDefault(); playTrack('${track.id}')">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </a>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // Copy album link to clipboard
@@ -591,14 +678,10 @@ function showToast(message) {
 // Update URL and view when clicking albums/tracks
 function updateUrlAndView(type, id) {
     if (type === 'album') {
-        // Update URL without page reload
-        history.pushState({}, '', `/#album/${encodeURIComponent(id)}`);
-        // Highlight the album
-        showAlbumDetails(id);
+        // Navigate to the album using the existing navigation function
+        window.navigateToAlbum(id);
     } else if (type === 'track') {
-        // Update URL without page reload
-        history.pushState({}, '', `/#track/${id}`);
-        // Play the track
-        playTrack(id);
+        // Navigate to the track using the existing navigation function
+        window.navigateToTrack(id);
     }
 }
