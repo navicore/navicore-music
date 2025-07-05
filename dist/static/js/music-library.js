@@ -282,7 +282,7 @@ window.renderLibrary = function() {
                                 '/static/images/default-album.svg'}" 
                                  alt="${album.album}" 
                                  class="w-full h-full object-cover"
-                                 onerror="console.error('Album cover failed to load for:', '${album.album}', 'Path:', '${album.tracks[0].cover_art_path}'); this.src='/static/images/default-album.svg'">
+                                 onerror="this.src='/static/images/default-album.svg'">
                         </div>
                         <h3 class="font-bold text-sm line-clamp-2">${album.album}</h3>
                         <p class="text-xs opacity-70 line-clamp-1">${album.artist}</p>
@@ -317,7 +317,7 @@ window.renderLibrary = function() {
                                             '/static/images/default-album.svg'}" 
                                              alt="${track.album}" 
                                              class="w-full h-full object-cover rounded"
-                                             onerror="this.src='/static/images/default-album.svg'">
+                                             onerror="this.onerror=null; this.src='/static/images/default-album.svg'">
                                     </div>
                                 </td>
                                 <td class="font-semibold">${track.title}</td>
@@ -615,7 +615,7 @@ window.renderSingleAlbum = function(albumObj, albumKey) {
                             '/static/images/default-album.svg'}" 
                              alt="${album.album}" 
                              class="w-full h-full object-cover rounded-lg shadow-lg"
-                             onerror="this.src='/static/images/default-album.svg'">
+                             onerror="this.onerror=null; this.src='/static/images/default-album.svg'">
                     </div>
                     <div class="flex-1">
                         <div class="flex justify-between items-start">
