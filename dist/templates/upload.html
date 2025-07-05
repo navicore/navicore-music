@@ -2,43 +2,10 @@
 <div class="container mx-auto p-8 max-w-4xl">
     <h1 class="text-3xl font-bold mb-8">Upload Music</h1>
     
-    <!-- Upload Options -->
-    <div class="tabs tabs-boxed mb-8">
-        <a class="tab tab-active" onclick="showUploadType('album')">Upload Album</a>
-        <a class="tab" onclick="showUploadType('tracks')">Upload Tracks</a>
-    </div>
-    
-    <!-- Album Upload Form -->
-    <div id="album-upload" class="card bg-base-200">
-        <div class="card-body">
-            <h2 class="card-title mb-4">Upload Album as ZIP</h2>
-            <form id="album-upload-form" class="space-y-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Album ZIP File</span>
-                        <span class="label-text-alt">Contains audio files</span>
-                    </label>
-                    <input type="file" 
-                           name="album" 
-                           accept=".zip" 
-                           required 
-                           class="file-input file-input-bordered w-full" />
-                    <label class="label">
-                        <span class="label-text-alt">Maximum 128MB</span>
-                    </label>
-                </div>
-                
-                <button type="submit" class="btn btn-primary btn-lg w-full">
-                    Upload Album ZIP
-                </button>
-            </form>
-        </div>
-    </div>
-    
     <!-- Individual Tracks Upload -->
-    <div id="tracks-upload" class="card bg-base-200 hidden">
+    <div id="tracks-upload" class="card bg-base-200">
         <div class="card-body">
-            <h2 class="card-title mb-4">Upload Individual Tracks</h2>
+            <h2 class="card-title mb-4">Upload Album</h2>
             <form id="tracks-upload-form" class="space-y-4">
                 <!-- Album Metadata -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -247,54 +214,6 @@
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
     
-    function showUploadType(type) {
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.remove('tab-active');
-        });
-        event.target.classList.add('tab-active');
-        
-        if (type === 'album') {
-            document.getElementById('album-upload').classList.remove('hidden');
-            document.getElementById('tracks-upload').classList.add('hidden');
-        } else {
-            document.getElementById('album-upload').classList.add('hidden');
-            document.getElementById('tracks-upload').classList.remove('hidden');
-        }
-    }
-    
-    // Album upload handler
-    document.getElementById('album-upload-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const fileInput = e.target.querySelector('input[name="album"]');
-        const file = fileInput.files[0];
-        
-        if (!file) return;
-        
-        document.getElementById('album-upload').classList.add('hidden');
-        document.getElementById('upload-progress').classList.remove('hidden');
-        
-        const formData = new FormData();
-        formData.append('album', file);
-        
-        try {
-            const response = await fetch('https://api.navicore.tech/api/v1/upload/album', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            
-            if (response.ok) {
-                showUploadResults(true, result);
-            } else {
-                showUploadResults(false, result);
-            }
-        } catch (error) {
-            showUploadResults(false, { error: error.message });
-        }
-    });
-    
     // Individual tracks upload handler
     document.getElementById('tracks-upload-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -419,17 +338,11 @@
     
     function resetUploadForm() {
         document.getElementById('upload-results').classList.add('hidden');
-        document.getElementById('album-upload').classList.remove('hidden');
-        document.getElementById('tracks-upload').classList.add('hidden');
-        document.getElementById('album-upload-form').reset();
+        document.getElementById('tracks-upload').classList.remove('hidden');
         document.getElementById('tracks-upload-form').reset();
         document.getElementById('track-list-preview').classList.add('hidden');
         selectedTracks = [];
         uploadedTracks = [];
-        
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.remove('tab-active');
-        });
-        document.querySelector('.tab').classList.add('tab-active');
+        document.getElementById('year-input').value = new Date().getFullYear();
     }
 </script>
