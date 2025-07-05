@@ -31,6 +31,9 @@
                 <main class="flex-1 p-4 lg:p-8 overflow-y-auto" style="padding-bottom: 250px;">
                     <div id="main-content">
                         <!-- Dynamic content loads here -->
+                        <div class="flex items-center justify-center h-64">
+                            <span class="loading loading-spinner loading-lg"></span>
+                        </div>
                     </div>
                 </main>
                 
@@ -298,6 +301,11 @@
                 const albumKey = decodeURIComponent(hash.substring(7));
                 console.log('Loading album:', albumKey);
                 window.currentAlbumToView = albumKey;
+                
+                // Force reload of track list
+                const mainContent = document.getElementById('main-content');
+                mainContent.innerHTML = '<div class="flex items-center justify-center h-64"><span class="loading loading-spinner loading-lg"></span></div>';
+                
                 htmx.ajax('GET', '/templates/track-list.html', '#main-content').then(() => {
                     console.log('Track list loaded for album');
                 });
@@ -305,13 +313,15 @@
                 // Direct track link
                 const trackId = hash.substring(7);
                 window.currentTrackToPlay = trackId;
+                
+                // Force reload of track list
+                const mainContent = document.getElementById('main-content');
+                mainContent.innerHTML = '<div class="flex items-center justify-center h-64"><span class="loading loading-spinner loading-lg"></span></div>';
+                
                 htmx.ajax('GET', '/templates/track-list.html', '#main-content');
             } else {
                 // Default to music library
-                const libraryContainer = document.getElementById('library-container');
-                if (!libraryContainer) {
-                    htmx.ajax('GET', '/templates/track-list.html', '#main-content');
-                }
+                htmx.ajax('GET', '/templates/track-list.html', '#main-content');
             }
         }
         
