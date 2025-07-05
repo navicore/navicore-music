@@ -6,7 +6,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 200px; /* Fixed optimal height */
+  height: 230px; /* Fixed optimal height */
   background: var(--player-bg);
   border-top: 2px solid var(--player-border);
   display: flex;
@@ -260,7 +260,7 @@
 /* Responsive Design */
 @media (max-width: 1024px) {
   .audio-player {
-    height: 200px; /* Keep fixed height on tablets */
+    height: 230px; /* Keep fixed height on tablets */
   }
   
   .player-visual {
@@ -276,7 +276,7 @@
 @media (max-width: 768px) {
   .audio-player {
     flex-direction: column;
-    height: 220px; /* Slightly taller on mobile for vertical layout */
+    height: 250px; /* Taller on mobile for vertical layout */
   }
   
   .player-album {
@@ -327,7 +327,7 @@
 /* Only shrink when viewport is critically small */
 @media (max-height: 500px) {
   .audio-player {
-    height: 160px; /* Compromise a bit */
+    height: 180px; /* Compromise a bit */
   }
   
   .album-art-container {
