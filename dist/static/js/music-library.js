@@ -21,15 +21,15 @@ function initializeTrackList() {
         const hash = window.location.hash;
         if (hash.startsWith('#album/')) {
             const albumKey = decodeURIComponent(hash.substring(7));
-            showAlbumDetails(albumKey);
+            window.showAlbumDetails(albumKey);
         } else if (hash.startsWith('#track/')) {
             const trackId = hash.substring(7);
-            playTrack(trackId);
+            window.playTrack(trackId);
         } else if (window.currentAlbumToView) {
-            showAlbumDetails(window.currentAlbumToView);
+            window.showAlbumDetails(window.currentAlbumToView);
             window.currentAlbumToView = null;
         } else if (window.currentTrackToPlay) {
-            playTrack(window.currentTrackToPlay);
+            window.playTrack(window.currentTrackToPlay);
             window.currentTrackToPlay = null;
         }
     })
@@ -297,7 +297,7 @@ function formatDuration(seconds) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function playTrack(trackId) {
+window.playTrack = function(trackId) {
     // Find the track data and its position in all tracks
     const trackIndex = allTracks.findIndex(t => t.id === trackId);
     if (trackIndex !== -1 && window.audioPlayer) {
@@ -483,7 +483,7 @@ function formatFileSize(bytes) {
 }
 
 // Show details for a specific album
-function showAlbumDetails(albumKey) {
+window.showAlbumDetails = function(albumKey) {
     // First ensure we're in album view
     setView('album');
     

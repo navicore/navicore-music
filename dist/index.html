@@ -206,8 +206,8 @@
             
             if (isOnMusicPage) {
                 // Already on music page, just show the album
-                if (typeof showAlbumDetails === 'function') {
-                    showAlbumDetails(albumKey);
+                if (window.showAlbumDetails) {
+                    window.showAlbumDetails(albumKey);
                 }
             } else {
                 // Need to load music page first
@@ -218,7 +218,12 @@
                     swap: 'innerHTML'
                 }).then(() => {
                     window.updateActiveNav('/');
-                    // The initializeTrackList will pick up currentAlbumToView
+                    // Wait a bit for the page to initialize
+                    setTimeout(() => {
+                        if (window.showAlbumDetails) {
+                            window.showAlbumDetails(albumKey);
+                        }
+                    }, 500);
                 });
             }
         };
@@ -234,8 +239,8 @@
             
             if (isOnMusicPage) {
                 // Already on music page, just play the track
-                if (typeof playTrack === 'function') {
-                    playTrack(trackId);
+                if (window.playTrack) {
+                    window.playTrack(trackId);
                 }
             } else {
                 // Need to load music page first
@@ -246,7 +251,12 @@
                     swap: 'innerHTML'
                 }).then(() => {
                     window.updateActiveNav('/');
-                    // The initializeTrackList will pick up currentTrackToPlay
+                    // Wait a bit for the page to initialize
+                    setTimeout(() => {
+                        if (window.playTrack) {
+                            window.playTrack(trackId);
+                        }
+                    }, 500);
                 });
             }
         };
