@@ -28,7 +28,7 @@ jobs:
           echo "🔍 Debugging database state..."
           
           # Run debug queries
-          wrangler d1 execute navicore-music --file=debug-database.sql || echo "Debug queries failed"
+          wrangler d1 execute navicore-music --remote --file=debug-database.sql || echo "Debug queries failed"
           
           echo ""
           echo "📊 Checking database binding..."
@@ -37,14 +37,14 @@ jobs:
           
           echo ""
           echo "🔍 Attempting direct table count..."
-          wrangler d1 execute navicore-music --command="SELECT 'TRACKS_TABLE_EXISTS' as check, COUNT(*) as count FROM tracks;" || echo "Tracks table doesn't exist or query failed"
+          wrangler d1 execute navicore-music --remote --command="SELECT 'TRACKS_TABLE_EXISTS' as check, COUNT(*) as count FROM tracks;" || echo "Tracks table doesn't exist or query failed"
           
           echo ""
           echo "🔍 Checking if we can create a test table..."
-          wrangler d1 execute navicore-music --command="CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, test TEXT);" || echo "Cannot create test table"
-          wrangler d1 execute navicore-music --command="INSERT INTO test_table (id, test) VALUES (1, 'GitHub Action Test');" || echo "Cannot insert into test table"
-          wrangler d1 execute navicore-music --command="SELECT * FROM test_table;" || echo "Cannot read from test table"
-          wrangler d1 execute navicore-music --command="DROP TABLE IF EXISTS test_table;" || echo "Cannot drop test table"
+          wrangler d1 execute navicore-music --remote --command="CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, test TEXT);" || echo "Cannot create test table"
+          wrangler d1 execute navicore-music --remote --command="INSERT INTO test_table (id, test) VALUES (1, 'GitHub Action Test');" || echo "Cannot insert into test table"
+          wrangler d1 execute navicore-music --remote --command="SELECT * FROM test_table;" || echo "Cannot read from test table"
+          wrangler d1 execute navicore-music --remote --command="DROP TABLE IF EXISTS test_table;" || echo "Cannot drop test table"
           
           echo ""
           echo "✅ Debug complete"
