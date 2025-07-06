@@ -62,7 +62,7 @@ jobs:
           BACKUP_FILE="backup_${TIMESTAMP}.sql"
           
           # Export the database
-          wrangler d1 export navicore-music --output=$BACKUP_FILE
+          wrangler d1 export navicore-music --remote --output=$BACKUP_FILE
           
           # Upload to R2 for safekeeping
           wrangler r2 object put navicore-music-files/backups/$BACKUP_FILE --file=$BACKUP_FILE
@@ -93,17 +93,17 @@ jobs:
           
           for TABLE in $TABLES_TO_DROP; do
             echo "Dropping table: $TABLE"
-            wrangler d1 execute navicore-music --command="DROP TABLE IF EXISTS $TABLE;" || echo "Table $TABLE might not exist"
+            wrangler d1 execute navicore-music --remote --command="DROP TABLE IF EXISTS $TABLE;" || echo "Table $TABLE might not exist"
           done
           
           # Also try to get and drop any other tables
           echo "Checking for additional tables..."
-          EXTRA_TABLES=$(wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%';" --json | jq -r '.result[0].results[].name' 2>/dev/null || echo "")
+          EXTRA_TABLES=$(wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%';" --json | jq -r '.result[0].results[].name' 2>/dev/null || echo "")
           
           for TABLE in $EXTRA_TABLES; do
             if [ -n "$TABLE" ]; then
               echo "Dropping additional table: $TABLE"
-              wrangler d1 execute navicore-music --command="DROP TABLE IF EXISTS $TABLE;"
+              wrangler d1 execute navicore-music --remote --command="DROP TABLE IF EXISTS $TABLE;"
             fi
           done
           
@@ -122,7 +122,7 @@ jobs:
           echo "Using schema: $SCHEMA_FILE"
           
           # Execute the schema file
-          if ! wrangler d1 execute navicore-music --file=$SCHEMA_FILE; then
+          if ! wrangler d1 execute navicore-music --remote --file=$SCHEMA_FILE; then
             echo "❌ Failed to execute schema file"
             echo "Attempting to execute schema in chunks..."
             
@@ -134,7 +134,7 @@ jobs:
               if [ -s "$PART" ]; then
                 # Add semicolon back and execute
                 echo ";" >> "$PART"
-                wrangler d1 execute navicore-music --file="$PART" || echo "Warning: Failed to execute part $PART"
+                wrangler d1 execute navicore-music --remote --file="$PART" || echo "Warning: Failed to execute part $PART"
               fi
               rm -f "$PART"
             done
@@ -151,7 +151,7 @@ jobs:
           echo "🔄 Running database migrations..."
           
           # Create migrations tracking table if it doesn't exist
-          wrangler d1 execute navicore-music --command="
+          wrangler d1 execute navicore-music --remote --command="
             CREATE TABLE IF NOT EXISTS migrations (
               id INTEGER PRIMARY KEY,
               filename TEXT UNIQUE NOT NULL,
@@ -159,7 +159,7 @@ jobs:
             );"
           
           # Get list of applied migrations
-          APPLIED=$(wrangler d1 execute navicore-music --command="SELECT filename FROM migrations;" --json | jq -r '.result[].results[].filename' 2>/dev/null || echo "")
+          APPLIED=$(wrangler d1 execute navicore-music --remote --command="SELECT filename FROM migrations;" --json | jq -r '.result[].results[].filename' 2>/dev/null || echo "")
           
           # Run each migration file in order
           for MIGRATION in migrations/*.sql; do
@@ -173,10 +173,10 @@ jobs:
                 echo "▶️ Applying migration: $FILENAME"
                 
                 # Execute the migration
-                wrangler d1 execute navicore-music --file="$MIGRATION"
+                wrangler d1 execute navicore-music --remote --file="$MIGRATION"
                 
                 # Record the migration
-                wrangler d1 execute navicore-music --command="INSERT INTO migrations (filename) VALUES ('$FILENAME');"
+                wrangler d1 execute navicore-music --remote --command="INSERT INTO migrations (filename) VALUES ('$FILENAME');"
                 
                 echo "✅ Applied: $FILENAME"
               fi
@@ -195,19 +195,19 @@ jobs:
           
           # List all tables
           echo "Tables:"
-          wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;" --json | jq -r '.result[0].results[].name' 2>/dev/null || echo "No tables found"
+          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;" --json | jq -r '.result[0].results[].name' 2>/dev/null || echo "No tables found"
           
           # Show tracks table schema for debugging
           echo ""
           echo "Tracks table schema:"
-          wrangler d1 execute navicore-music --command="SELECT sql FROM sqlite_master WHERE type='table' AND name='tracks';" --json | jq -r '.result[0].results[0].sql' 2>/dev/null || echo "Tracks table not found"
+          wrangler d1 execute navicore-music --remote --command="SELECT sql FROM sqlite_master WHERE type='table' AND name='tracks';" --json | jq -r '.result[0].results[0].sql' 2>/dev/null || echo "Tracks table not found"
           
           # Check for specific expected tables
           EXPECTED_TABLES="tracks albums tags album_tags track_tags playlists users"
           MISSING_TABLES=""
           
           for TABLE in $EXPECTED_TABLES; do
-            if ! wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name='$TABLE';" --json | jq -e '.result[].results[0]' > /dev/null 2>&1; then
+            if ! wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND name='$TABLE';" --json | jq -e '.result[].results[0]' > /dev/null 2>&1; then
               MISSING_TABLES="$MISSING_TABLES $TABLE"
             fi
           done

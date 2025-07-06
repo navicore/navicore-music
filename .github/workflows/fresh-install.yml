@@ -86,7 +86,7 @@ jobs:
           echo "📝 Initializing fresh schema..."
           
           # Execute the schema file
-          wrangler d1 execute navicore-music --file=schema.sql || {
+          wrangler d1 execute navicore-music --remote --file=schema.sql || {
             echo "⚠️ If this failed, you may need to update wrangler.toml with the new database ID"
             echo "Check the previous step for the new ID"
             exit 1
@@ -103,7 +103,7 @@ jobs:
           
           # List all tables
           echo "Tables in new database:"
-          wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;" || echo "Failed to query tables"
+          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;" || echo "Failed to query tables"
           
           echo ""
           echo "📊 Fresh Install Complete!"
