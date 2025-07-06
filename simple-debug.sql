@@ -3,9 +3,10 @@ SELECT 'Tables in database:' as info;
 SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;
 
 SELECT '---' as separator;
-SELECT 'Track count:' as info;
-SELECT COUNT(*) as count FROM tracks;
-
-SELECT '---' as separator;
-SELECT 'Sample tracks:' as info;
-SELECT id, title, artist FROM tracks LIMIT 3;
+SELECT 'Checking specific tables:' as info;
+SELECT 
+  (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tracks') as tracks_exists,
+  (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='albums') as albums_exists,
+  (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tags') as tags_exists,
+  (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='album_tags') as album_tags_exists,
+  (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='track_tags') as track_tags_exists;
