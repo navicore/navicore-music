@@ -37,7 +37,7 @@ jobs:
           
           echo ""
           echo "🔍 Attempting direct table count..."
-          wrangler d1 execute navicore-music --remote --command="SELECT 'TRACKS_TABLE_EXISTS' as check, COUNT(*) as count FROM tracks;" || echo "Tracks table doesn't exist or query failed"
+          wrangler d1 execute navicore-music --remote --command="SELECT COUNT(*) as count FROM tracks;" || echo "Tracks table doesn't exist or query failed"
           
           echo ""
           echo "🔍 Checking if we can create a test table..."
