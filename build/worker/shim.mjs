@@ -456,7 +456,12 @@ async function handleFileUpload(request, env) {
     
     // Handle tags using normalized tag system
     if (trackMetadata.tags) {
-      await setTrackTags(env, track.id, trackMetadata.tags);
+      try {
+        await setTrackTags(env, track.id, trackMetadata.tags);
+      } catch (tagError) {
+        console.error('Failed to set tags:', tagError);
+        // Don't fail the whole upload if tags fail
+      }
     }
     
     return new Response(JSON.stringify({
@@ -469,9 +474,11 @@ async function handleFileUpload(request, env) {
     });
   } catch (error) {
     console.error('Upload error:', error);
+    console.error('Stack trace:', error.stack);
     return new Response(JSON.stringify({ 
       error: 'Upload failed', 
-      details: error.message 
+      details: error.message,
+      stack: error.stack 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
