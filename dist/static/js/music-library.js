@@ -144,8 +144,13 @@ window.renderLibrary = function() {
                     album: track.album,
                     year: track.year,
                     genre: track.genre,
+                    cover_art_path: track.cover_art_path,
                     tracks: []
                 };
+            }
+            // Update cover_art_path if this track has one and the album doesn't
+            if (track.cover_art_path && !albumsMap[key].cover_art_path) {
+                albumsMap[key].cover_art_path = track.cover_art_path;
             }
             albumsMap[key].tracks.push(track);
         });
@@ -277,8 +282,8 @@ window.renderLibrary = function() {
                      onclick="editAlbum('${key.replace(/'/g, "\\'")}')"">
                     <div class="card-body p-4">
                         <div class="aspect-square bg-base-300 rounded mb-2 overflow-hidden">
-                            <img src="${album.tracks[0].cover_art_path ? 
-                                `https://api.navicore.tech/api/v1/tracks/${album.tracks[0].id}/cover` : 
+                            <img src="${album.cover_art_path ? 
+                                `https://api.navicore.tech/api/v1/covers/${encodeURIComponent(album.cover_art_path)}` : 
                                 '/static/images/default-album.svg'}" 
                                  alt="${album.album}" 
                                  class="w-full h-full object-cover"
@@ -313,7 +318,7 @@ window.renderLibrary = function() {
                                 <td>
                                     <div class="w-10 h-10">
                                         <img src="${track.cover_art_path ? 
-                                            `https://api.navicore.tech/api/v1/tracks/${track.id}/cover` : 
+                                            `https://api.navicore.tech/api/v1/covers/${encodeURIComponent(track.cover_art_path)}` : 
                                             '/static/images/default-album.svg'}" 
                                              alt="${track.album}" 
                                              class="w-full h-full object-cover rounded"
@@ -610,8 +615,8 @@ window.renderSingleAlbum = function(albumObj, albumKey) {
             <div class="card-body">
                 <div class="flex gap-6">
                     <div class="w-48 h-48 flex-shrink-0">
-                        <img src="${album.tracks[0].cover_art_path ? 
-                            `https://api.navicore.tech/api/v1/tracks/${album.tracks[0].id}/cover` : 
+                        <img src="${album.cover_art_path ? 
+                            `https://api.navicore.tech/api/v1/covers/${encodeURIComponent(album.cover_art_path)}` : 
                             '/static/images/default-album.svg'}" 
                              alt="${album.album}" 
                              class="w-full h-full object-cover rounded-lg shadow-lg"

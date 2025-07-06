@@ -221,7 +221,7 @@ class AudioPlayer {
     const albumArtElement = document.querySelector('.album-art');
     if (track.cover_art_path) {
       // If we have album art, load it from the API
-      albumArtElement.src = `https://api.navicore.tech/api/v1/tracks/${track.id}/cover`;
+      albumArtElement.src = `https://api.navicore.tech/api/v1/covers/${encodeURIComponent(track.cover_art_path)}`;
     } else {
       // Use default album art
       albumArtElement.src = '/static/images/default-album.svg';

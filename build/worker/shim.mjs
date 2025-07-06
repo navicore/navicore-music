@@ -63,6 +63,9 @@ export default {
       } else if (path.match(/^\/api\/v1\/tracks\/[^\/]+\/cover$/) && method === 'GET') {
         const id = path.split('/')[4];
         return await handleGetCover(id, env, request);
+      } else if (path.startsWith('/api/v1/covers/') && method === 'GET') {
+        const coverPath = path.substring(15); // Remove '/api/v1/covers/'
+        return await handleGetCoverByPath(decodeURIComponent(coverPath), env);
       } else if (path === '/api/v1/tags' && method === 'GET') {
         return await handleGetTags(request, env);
       } else if (path.match(/^\/album\/.+$/) && method === 'GET') {
@@ -797,6 +800,39 @@ async function handleTrackPage(request, env) {
   // For now, redirect to the main app with the track hash
   // In a full implementation, this would render server-side HTML with Open Graph tags
   return Response.redirect(`https://navicore.tech/#track/${trackId}`, 302);
+}
+
+async function handleGetCoverByPath(coverPath, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  
+  try {
+    // Get the cover from R2
+    const object = await env.MUSIC_BUCKET.get(coverPath);
+    
+    if (!object) {
+      return new Response('Cover art not found', { 
+        status: 404, 
+        headers: corsHeaders 
+      });
+    }
+    
+    // Return the image with proper headers
+    const headers = new Headers(object.httpMetadata || {});
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    
+    return new Response(object.body, { headers });
+  } catch (error) {
+    console.error('Get cover by path error:', error);
+    return new Response('Internal server error', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
 }
 
 async function handleGetTags(request, env) {
