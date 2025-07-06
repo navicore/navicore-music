@@ -40,9 +40,17 @@ jobs:
           echo "🗑️ Wiping database..."
           
           # Execute the wipe script
-          wrangler d1 execute navicore-music --file=wipe-database.sql
+          if ! wrangler d1 execute navicore-music --file=wipe-database.sql; then
+            echo "❌ Failed to execute wipe script, trying individual commands..."
+            
+            # Try dropping tables one by one
+            for TABLE in play_history playlist_tracks track_tags album_tags tracks albums tags playlists users migrations; do
+              echo "Dropping $TABLE..."
+              wrangler d1 execute navicore-music --command="DROP TABLE IF EXISTS $TABLE;" || echo "Failed to drop $TABLE"
+            done
+          fi
           
-          echo "✅ Database wiped"
+          echo "✅ Database wipe completed"
       
       - name: Create fresh schema
         env:
@@ -75,4 +83,16 @@ jobs:
           wrangler d1 execute navicore-music --command="PRAGMA table_info(tracks);" --json | jq -r '.result[0].results[] | select(.name == "tags")' || echo "No tags column found (this is good!)"
           
           echo ""
-          echo "✅ Database recreated successfully!"
+          echo "CRITICAL: Checking if any tracks remain in database:"
+          TRACK_COUNT=$(wrangler d1 execute navicore-music --command="SELECT COUNT(*) as count FROM tracks;" --json | jq -r '.result[0].results[0].count' || echo "0")
+          echo "Track count: $TRACK_COUNT"
+          
+          if [ "$TRACK_COUNT" != "0" ] && [ -n "$TRACK_COUNT" ]; then
+            echo "❌ ERROR: Database still contains $TRACK_COUNT tracks!"
+            echo "Attempting to show first few tracks:"
+            wrangler d1 execute navicore-music --command="SELECT id, title, artist FROM tracks LIMIT 5;" --json | jq '.result[0].results[]' || echo "Failed to list tracks"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ Database recreated successfully and verified empty!"
