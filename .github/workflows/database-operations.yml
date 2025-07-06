@@ -77,13 +77,34 @@ jobs:
         run: |
           echo "🗑️ Dropping all tables..."
           
-          # Get list of tables
-          TABLES=$(wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%';" --json | jq -r '.result[].results[].name' 2>/dev/null || echo "")
+          # Drop known tables explicitly (order matters due to foreign keys)
+          TABLES_TO_DROP="
+            play_history
+            playlist_tracks
+            track_tags
+            album_tags
+            tracks
+            albums
+            tags
+            playlists
+            users
+            migrations
+          "
           
-          # Drop each table
-          for TABLE in $TABLES; do
+          for TABLE in $TABLES_TO_DROP; do
             echo "Dropping table: $TABLE"
-            wrangler d1 execute navicore-music --command="DROP TABLE IF EXISTS $TABLE;"
+            wrangler d1 execute navicore-music --command="DROP TABLE IF EXISTS $TABLE;" || echo "Table $TABLE might not exist"
+          done
+          
+          # Also try to get and drop any other tables
+          echo "Checking for additional tables..."
+          EXTRA_TABLES=$(wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%';" --json | jq -r '.result[0].results[].name' 2>/dev/null || echo "")
+          
+          for TABLE in $EXTRA_TABLES; do
+            if [ -n "$TABLE" ]; then
+              echo "Dropping additional table: $TABLE"
+              wrangler d1 execute navicore-music --command="DROP TABLE IF EXISTS $TABLE;"
+            fi
           done
           
           echo "📝 Creating fresh schema..."
@@ -101,7 +122,23 @@ jobs:
           echo "Using schema: $SCHEMA_FILE"
           
           # Execute the schema file
-          wrangler d1 execute navicore-music --file=$SCHEMA_FILE
+          if ! wrangler d1 execute navicore-music --file=$SCHEMA_FILE; then
+            echo "❌ Failed to execute schema file"
+            echo "Attempting to execute schema in chunks..."
+            
+            # Split the schema file by semicolons and execute each statement
+            # This helps if the file is too large or has complex statements
+            csplit -s -f schema_part_ $SCHEMA_FILE '/;/' '{*}'
+            
+            for PART in schema_part_*; do
+              if [ -s "$PART" ]; then
+                # Add semicolon back and execute
+                echo ";" >> "$PART"
+                wrangler d1 execute navicore-music --file="$PART" || echo "Warning: Failed to execute part $PART"
+              fi
+              rm -f "$PART"
+            done
+          fi
           
           echo "✅ Database provisioned with fresh schema"
       
@@ -158,7 +195,12 @@ jobs:
           
           # List all tables
           echo "Tables:"
-          wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;" --json | jq -r '.result[].results[].name' || echo "No tables found"
+          wrangler d1 execute navicore-music --command="SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name;" --json | jq -r '.result[0].results[].name' 2>/dev/null || echo "No tables found"
+          
+          # Show tracks table schema for debugging
+          echo ""
+          echo "Tracks table schema:"
+          wrangler d1 execute navicore-music --command="SELECT sql FROM sqlite_master WHERE type='table' AND name='tracks';" --json | jq -r '.result[0].results[0].sql' 2>/dev/null || echo "Tracks table not found"
           
           # Check for specific expected tables
           EXPECTED_TABLES="tracks albums tags album_tags track_tags playlists users"

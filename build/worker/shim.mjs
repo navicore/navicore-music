@@ -435,7 +435,7 @@ async function handleFileUpload(request, env) {
       updated_at: now,
     };
     
-    // Save to database (without tags column)
+    // Save to database
     await env.DB.prepare(`
       INSERT INTO tracks (id, title, artist, album, duration, file_path, 
                          cover_art_path, year, track_number, created_at, updated_at)
@@ -454,7 +454,7 @@ async function handleFileUpload(request, env) {
       track.updated_at
     ).run();
     
-    // Handle tags separately using normalized tag system
+    // Handle tags using normalized tag system
     if (trackMetadata.tags) {
       await setTrackTags(env, track.id, trackMetadata.tags);
     }
