@@ -27,8 +27,8 @@ jobs:
         run: |
           echo "🔍 Debugging database state..."
           
-          # Run debug queries
-          wrangler d1 execute navicore-music --remote --file=debug-database.sql || echo "Debug queries failed"
+          # Run simple debug queries
+          wrangler d1 execute navicore-music --remote --file=simple-debug.sql || echo "Debug queries failed"
           
           echo ""
           echo "📊 Checking database binding..."
