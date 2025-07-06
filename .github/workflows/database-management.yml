@@ -1,0 +1,132 @@
+name: Database Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Database action to perform'
+        required: true
+        type: choice
+        options:
+          - debug
+          - wipe-and-recreate
+      confirm:
+        description: 'Type "CONFIRM" to proceed with wipe-and-recreate'
+        required: false
+        type: string
+
+jobs:
+  database-action:
+    name: Database ${{ github.event.inputs.action }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Wrangler
+        run: npm install -g wrangler
+      
+      # Debug action
+      - name: Debug Database
+        if: github.event.inputs.action == 'debug'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🔍 Debugging database state..."
+          
+          echo "📋 Listing all tables:"
+          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
+          
+          echo ""
+          echo "📊 Table counts:"
+          echo "Tracks:"
+          wrangler d1 execute navicore-music --remote --command="SELECT COUNT(*) as count FROM tracks;" || echo "0"
+          echo "Albums:" 
+          wrangler d1 execute navicore-music --remote --command="SELECT COUNT(*) as count FROM albums;" || echo "0"
+          echo "Tags:"
+          wrangler d1 execute navicore-music --remote --command="SELECT COUNT(*) as count FROM tags;" || echo "0"
+          
+          echo ""
+          echo "🎵 Sample data:"
+          echo "First 3 albums:"
+          wrangler d1 execute navicore-music --remote --command="SELECT id, artist, title, release_year FROM albums LIMIT 3;" || echo "No albums"
+          echo ""
+          echo "First 3 tracks:"
+          wrangler d1 execute navicore-music --remote --command="SELECT id, title, artist, album FROM tracks LIMIT 3;" || echo "No tracks"
+          
+          echo ""
+          echo "✅ Debug complete"
+      
+      # Wipe and recreate action
+      - name: Validate wipe confirmation
+        if: github.event.inputs.action == 'wipe-and-recreate'
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "CONFIRM" ]; then
+            echo "❌ You must type 'CONFIRM' in the confirmation field to wipe the database!"
+            exit 1
+          fi
+      
+      - name: Wipe Database
+        if: github.event.inputs.action == 'wipe-and-recreate'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🗑️ Wiping database..."
+          
+          # Execute the wipe script
+          if ! wrangler d1 execute navicore-music --remote --file=wipe-database.sql; then
+            echo "❌ Failed to execute wipe script, trying individual commands..."
+            
+            # Try dropping tables one by one
+            for TABLE in play_history playlist_tracks track_tags album_tags tracks albums tags playlists users migrations; do
+              echo "Dropping $TABLE..."
+              wrangler d1 execute navicore-music --remote --command="DROP TABLE IF EXISTS $TABLE;" || echo "Failed to drop $TABLE"
+            done
+          fi
+          
+          echo "✅ Database wiped"
+      
+      - name: Create Fresh Schema
+        if: github.event.inputs.action == 'wipe-and-recreate'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "📝 Creating fresh schema..."
+          
+          # Execute the schema file
+          wrangler d1 execute navicore-music --remote --file=schema.sql
+          
+          echo "✅ Schema created"
+      
+      - name: Verify Clean State
+        if: github.event.inputs.action == 'wipe-and-recreate'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🔍 Verifying database state..."
+          
+          echo "Tables in database:"
+          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
+          
+          echo ""
+          echo "Checking if any data remains:"
+          TRACK_COUNT=$(wrangler d1 execute navicore-music --remote --command="SELECT COUNT(*) as count FROM tracks;" --json | jq -r '.result[0].results[0].count' || echo "0")
+          echo "Track count: $TRACK_COUNT"
+          
+          if [ "$TRACK_COUNT" != "0" ] && [ -n "$TRACK_COUNT" ]; then
+            echo "❌ ERROR: Database still contains $TRACK_COUNT tracks!"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ Database recreated successfully and verified empty!"

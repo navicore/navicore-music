@@ -419,36 +419,80 @@ async function handleFileUpload(request, env) {
         .trim();
     }
     
-    // Create track record
+    // First, ensure the album exists
+    const albumId = crypto.randomUUID();
     const now = new Date().toISOString();
+    
+    // Check if album already exists
+    const existingAlbum = await env.DB.prepare(
+      'SELECT id FROM albums WHERE artist = ? AND title = ?'
+    ).bind(
+      trackMetadata.artist || 'Unknown Artist',
+      trackMetadata.album || 'Unknown Album'
+    ).first();
+    
+    let actualAlbumId;
+    if (!existingAlbum) {
+      // Create the album
+      await env.DB.prepare(`
+        INSERT INTO albums (id, artist, title, cover_art_path, release_year, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        albumId,
+        trackMetadata.artist || 'Unknown Artist',
+        trackMetadata.album || 'Unknown Album',
+        trackMetadata.cover_art_path || null,
+        trackMetadata.year || new Date().getFullYear(),
+        now,
+        now
+      ).run();
+      actualAlbumId = albumId;
+      
+      // Handle album tags
+      if (trackMetadata.tags) {
+        try {
+          await setAlbumTags(env, albumId, trackMetadata.tags);
+        } catch (tagError) {
+          console.error('Failed to set album tags:', tagError);
+        }
+      }
+    } else {
+      actualAlbumId = existingAlbum.id;
+      // Update album cover if provided and album doesn't have one
+      if (trackMetadata.cover_art_path) {
+        await env.DB.prepare(
+          'UPDATE albums SET cover_art_path = ? WHERE id = ? AND cover_art_path IS NULL'
+        ).bind(trackMetadata.cover_art_path, existingAlbum.id).run();
+      }
+    }
+    
+    // Create track record
     const track = {
       id: trackId,
       title: trackMetadata.title || 'Untitled',
       artist: trackMetadata.artist || 'Unknown Artist',
       album: trackMetadata.album || 'Unknown Album',
+      album_id: actualAlbumId,
       duration: trackMetadata.duration || 0, // TODO: Extract from file
       file_path: filePath,
-      cover_art_path: trackMetadata.cover_art_path || null,
-      year: trackMetadata.year || new Date().getFullYear(),
       track_number: trackMetadata.track_number || null,
       created_at: now,
       updated_at: now,
     };
     
-    // Save to database
+    // Save to database (without cover_art_path - that's on albums now)
     await env.DB.prepare(`
-      INSERT INTO tracks (id, title, artist, album, duration, file_path, 
-                         cover_art_path, year, track_number, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO tracks (id, title, artist, album, album_id, duration, file_path, 
+                         track_number, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       track.id,
       track.title,
       track.artist,
       track.album,
+      track.album_id,
       track.duration,
       track.file_path,
-      track.cover_art_path,
-      track.year,
       track.track_number,
       track.created_at,
       track.updated_at
