@@ -27,8 +27,12 @@ jobs:
         run: |
           echo "🔍 Debugging database state..."
           
-          # Run simple debug queries
-          wrangler d1 execute navicore-music --remote --file=simple-debug.sql || echo "Debug queries failed"
+          echo "📋 Listing all tables:"
+          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;" --json | jq -r '.result[0].results[].name' || echo "Failed to list tables"
+          
+          echo ""
+          echo "🔍 Checking if tag tables exist:"
+          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND name IN ('tags', 'album_tags', 'track_tags') ORDER BY name;" --json | jq -r '.result[0].results[].name' || echo "No tag tables found"
           
           echo ""
           echo "📊 Checking database binding..."
