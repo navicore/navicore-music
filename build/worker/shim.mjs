@@ -137,13 +137,26 @@ async function handleListTracks(request, env) {
     
     // Regular search in title, artist, album
     query = `
-      SELECT * FROM tracks 
-      WHERE title LIKE ? OR artist LIKE ? OR album LIKE ?
-      ORDER BY artist, album, track_number
+      SELECT 
+        t.*,
+        a.cover_art_path,
+        a.release_year as year
+      FROM tracks t
+      LEFT JOIN albums a ON t.album_id = a.id
+      WHERE t.title LIKE ? OR t.artist LIKE ? OR t.album LIKE ?
+      ORDER BY t.artist, t.album, t.track_number
     `;
     params = [searchTerm, searchTerm, searchTerm];
   } else {
-    query = 'SELECT * FROM tracks ORDER BY created_at DESC';
+    query = `
+      SELECT 
+        t.*,
+        a.cover_art_path,
+        a.release_year as year
+      FROM tracks t
+      LEFT JOIN albums a ON t.album_id = a.id
+      ORDER BY t.created_at DESC
+    `;
   }
   
   if (limit) {

@@ -314,9 +314,7 @@
             tracks: uploadedTracks
         });
         
-        // Reset for next upload
-        selectedTracks = [];
-        document.getElementById('track-files').value = '';
+        // Don't reset here - wait for user to click "Upload More"
         } catch (error) {
             console.error('Upload failed:', error);
             alert('Upload failed: ' + error.message);
@@ -442,6 +440,8 @@
         document.getElementById('tracks-upload').classList.remove('hidden');
         document.getElementById('tracks-upload-form').reset();
         document.getElementById('track-list-preview').classList.add('hidden');
+        document.getElementById('track-files').value = '';
+        document.querySelector('input[name="cover"]').value = '';
         selectedTracks = [];
         uploadedTracks = [];
         document.getElementById('year-input').value = new Date().getFullYear();
