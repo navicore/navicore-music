@@ -68,6 +68,11 @@ export default {
         return await handleGetCoverByPath(decodeURIComponent(coverPath), env);
       } else if (path === '/api/v1/tags' && method === 'GET') {
         return await handleGetTags(request, env);
+      } else if (path === '/templates/albums' && method === 'GET') {
+        return await handleAlbumsTemplate(request, env);
+      } else if (path.match(/^\/templates\/album\/.+$/) && method === 'GET') {
+        const albumKey = decodeURIComponent(path.substring(17));
+        return await handleAlbumDetailTemplate(albumKey, env);
       } else if (path.match(/^\/album\/.+$/) && method === 'GET') {
         return await handleAlbumPage(request, env);
       } else if (path.match(/^\/track\/.+$/) && method === 'GET') {
@@ -266,8 +271,10 @@ async function handleDeleteTrack(id, env) {
     }
   }
   
-  return new Response(JSON.stringify({ message: 'Track deleted successfully' }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  // Return empty response for HTMX to remove the element
+  return new Response('', {
+    status: 200,
+    headers: corsHeaders
   });
 }
 
@@ -831,6 +838,309 @@ async function handleGetCoverByPath(coverPath, env) {
     return new Response('Internal server error', { 
       status: 500, 
       headers: corsHeaders 
+    });
+  }
+}
+
+async function handleAlbumsTemplate(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  try {
+    const url = new URL(request.url);
+    const searchQuery = url.searchParams.get('q');
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const itemsPerPage = 20;
+    
+    // Get all tracks
+    let query;
+    let params = [];
+    
+    if (searchQuery) {
+      const searchTerm = `%${searchQuery}%`;
+      query = `
+        SELECT 
+          t.*,
+          a.cover_art_path,
+          a.release_year as year
+        FROM tracks t
+        LEFT JOIN albums a ON t.album_id = a.id
+        WHERE t.title LIKE ? OR t.artist LIKE ? OR t.album LIKE ?
+        ORDER BY t.artist, t.album, t.track_number
+      `;
+      params = [searchTerm, searchTerm, searchTerm];
+    } else {
+      query = `
+        SELECT 
+          t.*,
+          a.cover_art_path,
+          a.release_year as year
+        FROM tracks t
+        LEFT JOIN albums a ON t.album_id = a.id
+        ORDER BY t.artist, t.album, t.track_number
+      `;
+    }
+    
+    const result = await env.DB.prepare(query).bind(...params).all();
+    const tracks = result.results || [];
+    
+    // Group tracks by album
+    const albumsMap = {};
+    tracks.forEach(track => {
+      const key = `${track.artist}::${track.album}`;
+      if (!albumsMap[key]) {
+        albumsMap[key] = {
+          artist: track.artist,
+          album: track.album,
+          year: track.year,
+          cover_art_path: track.cover_art_path,
+          tracks: []
+        };
+      }
+      albumsMap[key].tracks.push(track);
+    });
+    
+    // Convert to array and handle pagination
+    const albums = Object.entries(albumsMap);
+    const totalAlbums = albums.length;
+    const totalPages = Math.ceil(totalAlbums / itemsPerPage);
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalAlbums);
+    const pageAlbums = albums.slice(startIndex, endIndex);
+    
+    // Build HTML
+    let html = '<div class="space-y-6">';
+    
+    // Handle empty state
+    if (totalAlbums === 0) {
+      html += `
+        <div class="text-center py-12">
+          <svg class="w-16 h-16 mx-auto mb-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+          </svg>
+          <p class="text-lg text-base-content/70">No music available yet</p>
+          <p class="text-sm text-base-content/50 mt-2">Upload some albums to get started</p>
+          <div class="mt-6">
+            <a href="#upload" 
+               class="btn btn-primary btn-lg">Upload Your First Album</a>
+          </div>
+        </div>
+      `;
+      html += '</div>';
+      return new Response(html, {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'text/html; charset=utf-8' 
+        },
+      });
+    }
+    
+    // Pagination controls
+    if (totalPages > 1) {
+      html += `<div class="flex justify-center items-center gap-2 my-6">`;
+      if (page > 1) {
+        html += `<button class="btn btn-sm" hx-get="/templates/albums?page=${page - 1}" hx-target="#library-container" hx-swap="innerHTML">← Previous</button>`;
+      }
+      html += `<span class="px-4">Page ${page} of ${totalPages}</span>`;
+      if (page < totalPages) {
+        html += `<button class="btn btn-sm" hx-get="/templates/albums?page=${page + 1}" hx-target="#library-container" hx-swap="innerHTML">Next →</button>`;
+      }
+      html += `</div>`;
+    }
+    
+    // Album cards
+    pageAlbums.forEach(([key, album]) => {
+      const encodedKey = encodeURIComponent(key);
+      const coverUrl = album.cover_art_path 
+        ? `https://api.navicore.tech/api/v1/covers/${encodeURIComponent(album.cover_art_path)}`
+        : '/static/images/default-album.svg';
+        
+      html += `
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <div class="flex gap-6">
+              <div class="w-32 h-32 flex-shrink-0">
+                <img src="${coverUrl}" 
+                     alt="${album.album}" 
+                     class="w-full h-full object-cover rounded-lg shadow"
+                     onerror="this.src='/static/images/default-album.svg'">
+              </div>
+              <div class="flex-1">
+                <h3 class="card-title text-xl cursor-pointer hover:text-primary" 
+                    hx-get="/templates/album/${encodedKey}" 
+                    hx-target="#library-container" 
+                    hx-swap="innerHTML">${album.album}</h3>
+                <p class="text-base-content/70">${album.artist}</p>
+                <p class="text-sm opacity-70 mt-1">
+                  ${album.year || 'Unknown year'} • ${album.tracks.length} tracks
+                </p>
+                <div class="mt-4 flex gap-2">
+                  <button class="btn btn-sm btn-primary" 
+                          onclick="window.audioPlayer.playAlbum('${key.replace(/'/g, "\\'")}')">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
+                    </svg>
+                    Play Album
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    
+    return new Response(html, {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/html; charset=utf-8' 
+      },
+    });
+  } catch (error) {
+    console.error('Albums template error:', error);
+    return new Response('<div class="alert alert-error">Failed to load albums</div>', {
+      status: 500,
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/html; charset=utf-8' 
+      },
+    });
+  }
+}
+
+async function handleAlbumDetailTemplate(albumKey, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  try {
+    const [artist, album] = albumKey.split('::');
+    
+    // Get tracks for this album
+    const query = `
+      SELECT 
+        t.*,
+        a.cover_art_path,
+        a.release_year as year
+      FROM tracks t
+      LEFT JOIN albums a ON t.album_id = a.id
+      WHERE t.artist = ? AND t.album = ?
+      ORDER BY t.track_number
+    `;
+    
+    const result = await env.DB.prepare(query).bind(artist, album).all();
+    const tracks = result.results || [];
+    
+    if (tracks.length === 0) {
+      return new Response('<div class="alert alert-error">Album not found</div>', {
+        status: 404,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'text/html; charset=utf-8' 
+        },
+      });
+    }
+    
+    const firstTrack = tracks[0];
+    const coverUrl = firstTrack.cover_art_path 
+      ? `https://api.navicore.tech/api/v1/covers/${encodeURIComponent(firstTrack.cover_art_path)}`
+      : '/static/images/default-album.svg';
+    
+    let html = `
+      <div class="mb-4">
+        <button class="btn btn-sm btn-ghost" 
+                hx-get="/templates/albums" 
+                hx-target="#library-container" 
+                hx-swap="innerHTML">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Back to all albums
+        </button>
+      </div>
+      <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+          <div class="flex gap-6">
+            <div class="w-48 h-48 flex-shrink-0">
+              <img src="${coverUrl}" 
+                   alt="${album}" 
+                   class="w-full h-full object-cover rounded-lg shadow-lg"
+                   onerror="this.src='/static/images/default-album.svg'">
+            </div>
+            <div class="flex-1">
+              <h3 class="card-title text-2xl">${album}</h3>
+              <p class="text-lg text-base-content/70">${artist}</p>
+              <p class="text-sm opacity-70 mt-1">
+                ${firstTrack.year || 'Unknown year'} • ${tracks.length} tracks
+              </p>
+              <div class="mt-4 flex gap-2">
+                <button class="btn btn-primary" 
+                        onclick="window.audioPlayer.playAlbum('${albumKey.replace(/'/g, "\\'")}')">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
+                  </svg>
+                  Play Album
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <div class="space-y-2">
+    `;
+    
+    // Track list
+    tracks.forEach(track => {
+      const duration = track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '--:--';
+      html += `
+        <div class="flex items-center gap-3 p-3 hover:bg-base-300 rounded-lg cursor-pointer"
+             onclick="window.audioPlayer.playTrack('${track.id}')">
+          <span class="text-lg font-semibold w-8 text-center">${track.track_number || '-'}</span>
+          <div class="flex-1">
+            <p class="font-semibold">${track.title}</p>
+          </div>
+          <span class="text-sm opacity-70">${duration}</span>
+          <button class="btn btn-sm btn-circle btn-ghost" 
+                  hx-delete="/api/v1/tracks/${track.id}" 
+                  hx-confirm="Delete '${track.title}'?"
+                  hx-target="closest div"
+                  hx-swap="outerHTML">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      `;
+    });
+    
+    html += `
+          </div>
+        </div>
+      </div>
+    `;
+    
+    return new Response(html, {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/html; charset=utf-8' 
+      },
+    });
+  } catch (error) {
+    console.error('Album detail template error:', error);
+    return new Response('<div class="alert alert-error">Failed to load album details</div>', {
+      status: 500,
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/html; charset=utf-8' 
+      },
     });
   }
 }

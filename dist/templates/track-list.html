@@ -1,103 +1,76 @@
-<!-- Unified library template -->
+<!-- Music Library - Pure HTMX -->
 <div class="space-y-6">
     <!-- Search and View Controls -->
     <div class="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
         <div class="flex-1">
             <input type="text" 
                    id="search-input"
+                   name="q"
                    placeholder="Search albums, artists, or tracks..." 
                    class="input input-bordered w-full" 
-                   onkeyup="window.handleSearch(event)"/>
+                   hx-get="/templates/albums"
+                   hx-trigger="keyup changed delay:500ms"
+                   hx-target="#library-container"
+                   hx-swap="innerHTML"/>
         </div>
         <div class="btn-group">
-            <button class="btn btn-sm btn-active" onclick="window.setView('album')" data-view="album">
+            <button class="btn btn-sm btn-active" data-view="album">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
                 </svg>
                 Albums
             </button>
-            <button class="btn btn-sm" onclick="window.setView('grid')" data-view="grid">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-                </svg>
-                Grid
-            </button>
-            <button class="btn btn-sm" onclick="window.setView('list')" data-view="list">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                </svg>
-                List
-            </button>
         </div>
     </div>
     
-    <div id="library-container" class="space-y-6">
-        <!-- Content will be rendered based on view mode -->
+    <!-- Library container loads albums via HTMX -->
+    <div id="library-container" 
+         hx-get="/templates/albums" 
+         hx-trigger="load"
+         hx-swap="innerHTML">
         <div class="flex items-center justify-center h-64">
             <span class="loading loading-spinner loading-lg"></span>
         </div>
     </div>
-    
-    <!-- Album Edit Modal -->
-    <dialog id="album-edit-modal" class="modal">
-        <div class="modal-box max-w-3xl">
-            <h3 class="font-bold text-lg mb-4">Edit Album</h3>
-            
-            <!-- Album Info -->
-            <div id="album-info" class="mb-6">
-                <!-- Album details will be populated here -->
-            </div>
-            
-            <!-- Track List -->
-            <div id="album-tracks" class="space-y-2 mb-6">
-                <!-- Tracks will be listed here -->
-            </div>
-            
-            <!-- Add Track Button -->
-            <div class="mb-4">
-                <button class="btn btn-sm btn-primary" onclick="window.showAddTrackForm()">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Add Track
-                </button>
-            </div>
-            
-            <!-- Add Track Form (hidden by default) -->
-            <div id="add-track-form" class="hidden mb-4">
-                <div class="card bg-base-200">
-                    <div class="card-body">
-                        <h4 class="font-semibold mb-2">Add Track to Album</h4>
-                        <input type="file" 
-                               id="new-track-file"
-                               accept=".mp3,.flac,.ogg,.m4a,.wav,audio/*" 
-                               class="file-input file-input-bordered w-full mb-2" />
-                        <input type="text" 
-                               id="new-track-title"
-                               placeholder="Track title (optional)" 
-                               class="input input-bordered w-full mb-2" />
-                        <input type="number" 
-                               id="new-track-number"
-                               placeholder="Track number" 
-                               class="input input-bordered w-full mb-2" 
-                               min="1" />
-                        <div class="flex gap-2">
-                            <button class="btn btn-sm btn-success" onclick="window.uploadNewTrack()">Upload</button>
-                            <button class="btn btn-sm btn-ghost" onclick="window.hideAddTrackForm()">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-action">
-                <button class="btn btn-outline btn-error" onclick="window.deleteAlbum()">Delete Album</button>
-                <button class="btn" onclick="window.closeEditModal()">Close</button>
-            </div>
-        </div>
-        <form method="dialog" class="modal-backdrop">
-            <button>close</button>
-        </form>
-    </dialog>
 </div>
 
-<!-- Pure HTML template - no JavaScript -->
+<script>
+// Minimal JS for audio player integration only
+window.audioPlayer = window.audioPlayer || {
+  playTrack: function(trackId) {
+    if (window.audioPlayer && window.audioPlayer.loadTrack) {
+      // Fetch track data and play
+      fetch(`https://api.navicore.tech/api/v1/tracks`)
+        .then(res => res.json())
+        .then(data => {
+          const track = data.tracks.find(t => t.id === trackId);
+          if (track) {
+            window.audioPlayer.loadTrack(track);
+            window.audioPlayer.play();
+          }
+        });
+    }
+  },
+  playAlbum: function(albumKey) {
+    if (window.audioPlayer && window.audioPlayer.loadTrack) {
+      const [artist, album] = albumKey.split('::');
+      // Fetch album tracks and play
+      fetch(`https://api.navicore.tech/api/v1/tracks`)
+        .then(res => res.json())
+        .then(data => {
+          const albumTracks = data.tracks
+            .filter(t => t.artist === artist && t.album === album)
+            .sort((a, b) => (a.track_number || 999) - (b.track_number || 999));
+          
+          if (albumTracks.length > 0) {
+            // Load playlist
+            window.audioPlayer.playlist = albumTracks;
+            window.audioPlayer.currentIndex = 0;
+            window.audioPlayer.loadTrack(albumTracks[0]);
+            window.audioPlayer.play();
+          }
+        });
+    }
+  }
+};
+</script>
