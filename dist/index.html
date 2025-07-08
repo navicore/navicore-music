@@ -96,7 +96,7 @@
     <!-- Audio Player loaded dynamically after WASM initializes -->
     
     <!-- Load Music Library Functions -->
-    <script src="/static/js/music-library.js"></script>
+    <!-- music-library.js removed - using pure HTMX approach -->
     
     <script>
     </script>
@@ -261,9 +261,8 @@
         // HTMX event handlers
         
         document.body.addEventListener('htmx:configRequest', (event) => {
-            event.detail.headers['Content-Type'] = 'application/json';
-            // Update API URLs to use our backend
-            if (event.detail.path.startsWith('/api/')) {
+            // Update URLs to use our backend
+            if (event.detail.path.startsWith('/api/') || event.detail.path.startsWith('/templates/')) {
                 event.detail.path = 'https://api.navicore.tech' + event.detail.path;
             }
         });
@@ -274,10 +273,7 @@
                 // Log what was just loaded
                 const mainContent = document.getElementById('main-content');
                 
-                const libraryContainer = document.getElementById('library-container');
-                if (libraryContainer && window.initializeTrackList) {
-                    window.initializeTrackList();
-                }
+                // HTMX will handle library loading automatically
                 
                 // Auto-close drawer on mobile
                 if (window.innerWidth < 1024) {
