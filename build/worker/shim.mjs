@@ -73,6 +73,10 @@ export default {
       } else if (path.match(/^\/templates\/album\/.+$/) && method === 'GET') {
         const albumKey = decodeURIComponent(path.substring(17));
         return await handleAlbumDetailTemplate(albumKey, env);
+      } else if (path === '/templates/home.html' && method === 'GET') {
+        return await serveStaticTemplate('home.html');
+      } else if (path === '/templates/upload.html' && method === 'GET') {
+        return await serveStaticTemplate('upload.html');
       } else if (path.match(/^\/album\/.+$/) && method === 'GET') {
         return await handleAlbumPage(request, env);
       } else if (path.match(/^\/track\/.+$/) && method === 'GET') {
@@ -1136,6 +1140,35 @@ async function handleAlbumDetailTemplate(albumKey, env) {
   } catch (error) {
     console.error('Album detail template error:', error);
     return new Response('<div class="alert alert-error">Failed to load album details</div>', {
+      status: 500,
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/html; charset=utf-8' 
+      },
+    });
+  }
+}
+
+async function serveStaticTemplate(templateName) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  
+  try {
+    const response = await fetch(`https://navicore.tech/templates/${templateName}`);
+    const html = await response.text();
+    
+    return new Response(html, {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/html; charset=utf-8' 
+      },
+    });
+  } catch (error) {
+    console.error(`Error loading template ${templateName}:`, error);
+    return new Response('<div class="alert alert-error">Failed to load template</div>', {
       status: 500,
       headers: { 
         ...corsHeaders, 
