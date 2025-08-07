@@ -10,11 +10,11 @@ export default {
     const path = url.pathname;
     const method = request.method;
     
-    // Enable CORS
+    // Enable CORS with HTMX headers
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, HX-Current-URL, HX-Request, HX-Target, HX-Trigger',
     };
     
     // Handle preflight requests
@@ -850,7 +850,7 @@ async function handleAlbumsTemplate(request, env) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, HX-Current-URL, HX-Request, HX-Target, HX-Trigger',
   };
 
   try {
@@ -1021,7 +1021,7 @@ async function handleAlbumDetailTemplate(albumKey, env) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, HX-Current-URL, HX-Request, HX-Target, HX-Trigger',
   };
 
   try {
@@ -1153,7 +1153,7 @@ async function serveStaticTemplate(templateName) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, HX-Current-URL, HX-Request, HX-Target, HX-Trigger',
   };
   
   try {
