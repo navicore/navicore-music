@@ -330,6 +330,29 @@
                         console.log('Audio player script loaded, creating instance...');
                         window.audioPlayer = new AudioPlayer();
                         console.log('Audio player initialized:', window.audioPlayer);
+                        
+                        // Create helper functions for delayed playback
+                        window.playAlbumWhenReady = function(albumKey) {
+                            if (window.audioPlayer && window.audioPlayer.playAlbum) {
+                                window.audioPlayer.playAlbum(albumKey);
+                            }
+                        };
+                        
+                        window.playTrackWhenReady = function(trackId) {
+                            if (window.audioPlayer && window.audioPlayer.playTrack) {
+                                window.audioPlayer.playTrack(trackId);
+                            }
+                        };
+                        
+                        // Check if there's a pending play action
+                        if (window.pendingAlbumPlay) {
+                            window.playAlbumWhenReady(window.pendingAlbumPlay);
+                            delete window.pendingAlbumPlay;
+                        }
+                        if (window.pendingTrackPlay) {
+                            window.playTrackWhenReady(window.pendingTrackPlay);
+                            delete window.pendingTrackPlay;
+                        }
                     };
                     script.onerror = () => {
                         console.error('Failed to load audio player script');
