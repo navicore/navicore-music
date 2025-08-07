@@ -315,8 +315,15 @@
         // Define helper functions immediately so they're available for HTMX content
         window.playAlbumWhenReady = function(albumKey) {
             console.log('playAlbumWhenReady called with:', albumKey);
-            if (window.audioPlayer && window.audioPlayer.playAlbum) {
-                window.audioPlayer.playAlbum(albumKey);
+            if (window.audioPlayer) {
+                console.log('audioPlayer exists, checking for playAlbum method...');
+                console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.audioPlayer)));
+                if (window.audioPlayer.playAlbum) {
+                    window.audioPlayer.playAlbum(albumKey);
+                } else {
+                    console.log('playAlbum method not found on audioPlayer');
+                    window.pendingAlbumPlay = albumKey;
+                }
             } else {
                 console.log('Audio player not ready, storing for later:', albumKey);
                 window.pendingAlbumPlay = albumKey;
