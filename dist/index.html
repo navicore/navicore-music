@@ -312,6 +312,27 @@
         // Initialize WASM audio player when ready
         import init from '/wasm/navicore_music_frontend.js';
         
+        // Define helper functions immediately so they're available for HTMX content
+        window.playAlbumWhenReady = function(albumKey) {
+            console.log('playAlbumWhenReady called with:', albumKey);
+            if (window.audioPlayer && window.audioPlayer.playAlbum) {
+                window.audioPlayer.playAlbum(albumKey);
+            } else {
+                console.log('Audio player not ready, storing for later:', albumKey);
+                window.pendingAlbumPlay = albumKey;
+            }
+        };
+        
+        window.playTrackWhenReady = function(trackId) {
+            console.log('playTrackWhenReady called with:', trackId);
+            if (window.audioPlayer && window.audioPlayer.playTrack) {
+                window.audioPlayer.playTrack(trackId);
+            } else {
+                console.log('Audio player not ready, storing for later:', trackId);
+                window.pendingTrackPlay = trackId;
+            }
+        };
+        
         async function initializePlayer() {
             try {
                 console.log('Starting WASM initialization...');
@@ -331,32 +352,15 @@
                         window.audioPlayer = new AudioPlayer();
                         console.log('Audio player initialized:', window.audioPlayer);
                         
-                        // Create helper functions for delayed playback
-                        window.playAlbumWhenReady = function(albumKey) {
-                            console.log('playAlbumWhenReady called with:', albumKey);
-                            if (window.audioPlayer && window.audioPlayer.playAlbum) {
-                                window.audioPlayer.playAlbum(albumKey);
-                            } else {
-                                console.error('Audio player not ready or playAlbum method missing');
-                            }
-                        };
-                        
-                        window.playTrackWhenReady = function(trackId) {
-                            console.log('playTrackWhenReady called with:', trackId);
-                            if (window.audioPlayer && window.audioPlayer.playTrack) {
-                                window.audioPlayer.playTrack(trackId);
-                            } else {
-                                console.error('Audio player not ready or playTrack method missing');
-                            }
-                        };
-                        
                         // Check if there's a pending play action
                         if (window.pendingAlbumPlay) {
-                            window.playAlbumWhenReady(window.pendingAlbumPlay);
+                            console.log('Playing pending album:', window.pendingAlbumPlay);
+                            window.audioPlayer.playAlbum(window.pendingAlbumPlay);
                             delete window.pendingAlbumPlay;
                         }
                         if (window.pendingTrackPlay) {
-                            window.playTrackWhenReady(window.pendingTrackPlay);
+                            console.log('Playing pending track:', window.pendingTrackPlay);
+                            window.audioPlayer.playTrack(window.pendingTrackPlay);
                             delete window.pendingTrackPlay;
                         }
                     };
