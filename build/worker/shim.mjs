@@ -975,7 +975,7 @@ async function handleAlbumsTemplate(request, env) {
               <div class="flex-1">
                 <h3 class="card-title text-xl cursor-pointer hover:text-primary" 
                     hx-get="/templates/album/${encodedKey}" 
-                    hx-target="#library-container" 
+                    hx-target="#main-content" 
                     hx-swap="innerHTML">${album.album}</h3>
                 <p class="text-base-content/70">${album.artist}</p>
                 <p class="text-sm opacity-70 mt-1">
