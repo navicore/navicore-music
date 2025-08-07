@@ -1157,7 +1157,7 @@ async function serveStaticTemplate(templateName) {
   };
   
   try {
-    const response = await fetch(`https://navicore.tech/templates/${templateName}`);
+    const response = await fetch(`https://music.navicore.tech/templates/${templateName}`);
     const html = await response.text();
     
     return new Response(html, {
