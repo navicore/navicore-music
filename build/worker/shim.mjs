@@ -983,7 +983,7 @@ async function handleAlbumsTemplate(request, env) {
                 </p>
                 <div class="mt-4 flex gap-2">
                   <button class="btn btn-sm btn-primary" 
-                          onclick="window.audioPlayer.playAlbum('${key.replace(/'/g, "\\'")}')">
+                          onclick="if(window.audioPlayer && window.audioPlayer.playAlbum) window.audioPlayer.playAlbum('${key.replace(/'/g, "\\'")}'); else alert('Audio player is still loading...');">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
                     </svg>
@@ -1086,7 +1086,7 @@ async function handleAlbumDetailTemplate(albumKey, env) {
               </p>
               <div class="mt-4 flex gap-2">
                 <button class="btn btn-primary" 
-                        onclick="window.audioPlayer.playAlbum('${albumKey.replace(/'/g, "\\'")}')">
+                        onclick="if(window.audioPlayer && window.audioPlayer.playAlbum) window.audioPlayer.playAlbum('${albumKey.replace(/'/g, "\\'")}'); else alert('Audio player is still loading...');">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
                   </svg>
@@ -1106,7 +1106,7 @@ async function handleAlbumDetailTemplate(albumKey, env) {
       const duration = track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '--:--';
       html += `
         <div class="flex items-center gap-3 p-3 hover:bg-base-300 rounded-lg cursor-pointer"
-             onclick="window.audioPlayer.playTrack('${track.id}')">
+             onclick="if(window.audioPlayer && window.audioPlayer.playTrack) window.audioPlayer.playTrack('${track.id}'); else alert('Audio player is still loading...');">
           <span class="text-lg font-semibold w-8 text-center">${track.track_number || '-'}</span>
           <div class="flex-1">
             <p class="font-semibold">${track.title}</p>
