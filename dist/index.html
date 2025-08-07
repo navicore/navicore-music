@@ -153,7 +153,7 @@
                 }
                 currentLoadedPage = 'music';
                 
-                htmx.ajax('GET', '/templates/track-list.html', {
+                htmx.ajax('GET', '/templates/albums', {
                     target: '#main-content',
                     swap: 'innerHTML'
                 });
@@ -165,7 +165,7 @@
                 currentLoadedPage = 'music';
                 
                 // Load the music library page
-                htmx.ajax('GET', '/templates/track-list.html', {
+                htmx.ajax('GET', '/templates/albums', {
                     target: '#main-content',
                     swap: 'innerHTML'
                 });
@@ -177,7 +177,7 @@
                 currentLoadedPage = 'music';
                 
                 // Load the music library page
-                htmx.ajax('GET', '/templates/track-list.html', {
+                htmx.ajax('GET', '/templates/albums', {
                     target: '#main-content',
                     swap: 'innerHTML'
                 });
@@ -314,7 +314,9 @@
         
         async function initializePlayer() {
             try {
+                console.log('Starting WASM initialization...');
                 await init();
+                console.log('WASM initialized successfully');
                 
                 // WASM is loaded, now we can initialize audio
                 window.wasmAudioReady = true;
@@ -325,7 +327,9 @@
                     const script = document.createElement('script');
                     script.src = '/static/js/audio-player.js';
                     script.onload = () => {
+                        console.log('Audio player script loaded, creating instance...');
                         window.audioPlayer = new AudioPlayer();
+                        console.log('Audio player initialized:', window.audioPlayer);
                     };
                     script.onerror = () => {
                         console.error('Failed to load audio player script');
