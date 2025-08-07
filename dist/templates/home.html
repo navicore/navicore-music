@@ -47,7 +47,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="card cursor-pointer hover:shadow-xl transition-shadow"
              style="background: linear-gradient(135deg, #00cc66 0%, #00aa55 100%); color: #000000;"
-             hx-get="/templates/track-list.html" 
+             hx-get="/templates/albums" 
              hx-target="#main-content" 
              hx-push-url="#music"
              onclick="window.updateActiveNav('#music')">
@@ -118,7 +118,7 @@
         // Store the album key
         window.currentAlbumToView = albumKey;
         // Load the music page with HTMX
-        htmx.ajax('GET', '/templates/track-list.html', {
+        htmx.ajax('GET', '/templates/albums', {
             target: '#main-content',
             swap: 'innerHTML'
         });
