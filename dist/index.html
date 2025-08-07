@@ -314,37 +314,24 @@
         
         // Define helper functions immediately so they're available for HTMX content
         window.playAlbumWhenReady = function(albumKey) {
-            console.log('playAlbumWhenReady called with:', albumKey);
-            if (window.audioPlayer) {
-                console.log('audioPlayer exists, checking for playAlbum method...');
-                console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.audioPlayer)));
-                if (window.audioPlayer.playAlbum) {
-                    window.audioPlayer.playAlbum(albumKey);
-                } else {
-                    console.log('playAlbum method not found on audioPlayer');
-                    window.pendingAlbumPlay = albumKey;
-                }
+            if (window.audioPlayer && window.audioPlayer.playAlbum) {
+                window.audioPlayer.playAlbum(albumKey);
             } else {
-                console.log('Audio player not ready, storing for later:', albumKey);
                 window.pendingAlbumPlay = albumKey;
             }
         };
         
         window.playTrackWhenReady = function(trackId) {
-            console.log('playTrackWhenReady called with:', trackId);
             if (window.audioPlayer && window.audioPlayer.playTrack) {
                 window.audioPlayer.playTrack(trackId);
             } else {
-                console.log('Audio player not ready, storing for later:', trackId);
                 window.pendingTrackPlay = trackId;
             }
         };
         
         async function initializePlayer() {
             try {
-                console.log('Starting WASM initialization...');
                 await init();
-                console.log('WASM initialized successfully');
                 
                 // WASM is loaded, now we can initialize audio
                 window.wasmAudioReady = true;
@@ -355,18 +342,14 @@
                     const script = document.createElement('script');
                     script.src = '/static/js/audio-player.js';
                     script.onload = () => {
-                        console.log('Audio player script loaded, creating instance...');
                         window.audioPlayer = new AudioPlayer();
-                        console.log('Audio player initialized:', window.audioPlayer);
                         
                         // Check if there's a pending play action
                         if (window.pendingAlbumPlay) {
-                            console.log('Playing pending album:', window.pendingAlbumPlay);
                             window.audioPlayer.playAlbum(window.pendingAlbumPlay);
                             delete window.pendingAlbumPlay;
                         }
                         if (window.pendingTrackPlay) {
-                            console.log('Playing pending track:', window.pendingTrackPlay);
                             window.audioPlayer.playTrack(window.pendingTrackPlay);
                             delete window.pendingTrackPlay;
                         }
