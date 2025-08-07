@@ -321,6 +321,38 @@ class AudioPlayer {
     this.savePlaybackState();
   }
   
+  playTrack(trackId) {
+    // Fetch track data and play
+    fetch(`https://api.navicore.tech/api/v1/tracks`)
+      .then(res => res.json())
+      .then(data => {
+        const track = data.tracks.find(t => t.id === trackId);
+        if (track) {
+          this.loadTrack(track);
+          this.play();
+        }
+      })
+      .catch(err => console.error('Failed to load track:', err));
+  }
+  
+  playAlbum(albumKey) {
+    const [artist, album] = albumKey.split('::');
+    // Fetch album tracks and play
+    fetch(`https://api.navicore.tech/api/v1/tracks`)
+      .then(res => res.json())
+      .then(data => {
+        const albumTracks = data.tracks
+          .filter(t => t.artist === artist && t.album === album)
+          .sort((a, b) => (a.track_number || 999) - (b.track_number || 999));
+        
+        if (albumTracks.length > 0) {
+          this.setPlaylist(albumTracks, 0);
+          this.play();
+        }
+      })
+      .catch(err => console.error('Failed to load album:', err));
+  }
+  
   seek(event, offsetSeconds) {
     if (event) {
       const bar = event.currentTarget;

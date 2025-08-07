@@ -34,43 +34,4 @@
     </div>
 </div>
 
-<script>
-// Minimal JS for audio player integration only
-window.audioPlayer = window.audioPlayer || {
-  playTrack: function(trackId) {
-    if (window.audioPlayer && window.audioPlayer.loadTrack) {
-      // Fetch track data and play
-      fetch(`https://api.navicore.tech/api/v1/tracks`)
-        .then(res => res.json())
-        .then(data => {
-          const track = data.tracks.find(t => t.id === trackId);
-          if (track) {
-            window.audioPlayer.loadTrack(track);
-            window.audioPlayer.play();
-          }
-        });
-    }
-  },
-  playAlbum: function(albumKey) {
-    if (window.audioPlayer && window.audioPlayer.loadTrack) {
-      const [artist, album] = albumKey.split('::');
-      // Fetch album tracks and play
-      fetch(`https://api.navicore.tech/api/v1/tracks`)
-        .then(res => res.json())
-        .then(data => {
-          const albumTracks = data.tracks
-            .filter(t => t.artist === artist && t.album === album)
-            .sort((a, b) => (a.track_number || 999) - (b.track_number || 999));
-          
-          if (albumTracks.length > 0) {
-            // Load playlist
-            window.audioPlayer.playlist = albumTracks;
-            window.audioPlayer.currentIndex = 0;
-            window.audioPlayer.loadTrack(albumTracks[0]);
-            window.audioPlayer.play();
-          }
-        });
-    }
-  }
-};
-</script>
+<!-- Audio player methods are now part of the AudioPlayer class -->
