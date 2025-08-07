@@ -333,14 +333,20 @@
                         
                         // Create helper functions for delayed playback
                         window.playAlbumWhenReady = function(albumKey) {
+                            console.log('playAlbumWhenReady called with:', albumKey);
                             if (window.audioPlayer && window.audioPlayer.playAlbum) {
                                 window.audioPlayer.playAlbum(albumKey);
+                            } else {
+                                console.error('Audio player not ready or playAlbum method missing');
                             }
                         };
                         
                         window.playTrackWhenReady = function(trackId) {
+                            console.log('playTrackWhenReady called with:', trackId);
                             if (window.audioPlayer && window.audioPlayer.playTrack) {
                                 window.audioPlayer.playTrack(trackId);
+                            } else {
+                                console.error('Audio player not ready or playTrack method missing');
                             }
                         };
                         
