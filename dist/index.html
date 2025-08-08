@@ -9,6 +9,36 @@
     <script src="https://unpkg.com/htmx.org@1.9.9"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
     <link href="/static/css/app.css" rel="stylesheet">
+    <style>
+        /* Mobile-specific fixes */
+        @media (max-width: 640px) {
+            /* Fix main content padding for mobile */
+            main {
+                padding-bottom: 200px !important;
+            }
+            
+            /* Make audio player more compact on mobile */
+            .audio-player {
+                height: auto !important;
+                max-height: 180px !important;
+            }
+            
+            /* Stack album art vertically on mobile */
+            .card-body .flex {
+                flex-direction: column !important;
+            }
+            
+            /* Full width buttons on mobile */
+            .btn-group {
+                width: 100%;
+                display: flex;
+            }
+            
+            .btn-group .btn {
+                flex: 1;
+            }
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-base-100">
     <!-- Mobile Menu Button -->
@@ -28,7 +58,7 @@
             <div class="min-h-screen">
                 
                 <!-- Main Content Area -->
-                <main class="flex-1 p-4 lg:p-8 overflow-y-auto" style="padding-bottom: 250px;">
+                <main class="flex-1 p-4 lg:p-8 pb-32 overflow-y-auto">
                     <div id="main-content">
                         <!-- Dynamic content loads here -->
                         <div class="flex items-center justify-center h-64">
@@ -275,9 +305,11 @@
                 
                 // HTMX will handle library loading automatically
                 
-                // Auto-close drawer on mobile
+                // Auto-close drawer on mobile after navigation
                 if (window.innerWidth < 1024) {
-                    document.getElementById('drawer-toggle').checked = false;
+                    setTimeout(() => {
+                        document.getElementById('drawer-toggle').checked = false;
+                    }, 300);
                 }
                 
                 // Handle view mode from URL

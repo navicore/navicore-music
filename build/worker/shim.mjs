@@ -965,8 +965,8 @@ async function handleAlbumsTemplate(request, env) {
       html += `
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
-            <div class="flex gap-6">
-              <div class="w-32 h-32 flex-shrink-0">
+            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6">
+              <div class="w-full sm:w-32 h-48 sm:h-32 flex-shrink-0">
                 <img src="${coverUrl}" 
                      alt="${album.album}" 
                      class="w-full h-full object-cover rounded-lg shadow"
@@ -1072,8 +1072,8 @@ async function handleAlbumDetailTemplate(albumKey, env) {
       </div>
       <div class="card bg-base-200 shadow-xl">
         <div class="card-body">
-          <div class="flex gap-6">
-            <div class="w-48 h-48 flex-shrink-0">
+          <div class="flex flex-col sm:flex-row gap-4 sm:gap-6">
+            <div class="w-full sm:w-48 h-64 sm:h-48 flex-shrink-0">
               <img src="${coverUrl}" 
                    alt="${album}" 
                    class="w-full h-full object-cover rounded-lg shadow-lg"
@@ -1107,14 +1107,14 @@ async function handleAlbumDetailTemplate(albumKey, env) {
     tracks.forEach(track => {
       const duration = track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '--:--';
       html += `
-        <div class="flex items-center gap-3 p-3 hover:bg-base-300 rounded-lg cursor-pointer"
+        <div class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 hover:bg-base-300 rounded-lg cursor-pointer touch-manipulation"
              data-track-id="${track.id}"
              onclick="window.playTrackWhenReady ? window.playTrackWhenReady(this.dataset.trackId) : (window.pendingTrackPlay = this.dataset.trackId)">
-          <span class="text-lg font-semibold w-8 text-center">${track.track_number || '-'}</span>
-          <div class="flex-1">
-            <p class="font-semibold">${track.title}</p>
+          <span class="text-base sm:text-lg font-semibold w-6 sm:w-8 text-center">${track.track_number || '-'}</span>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold truncate">${track.title}</p>
           </div>
-          <span class="text-sm opacity-70">${duration}</span>
+          <span class="text-xs sm:text-sm opacity-70 ml-2">${duration}</span>
           <button class="btn btn-sm btn-circle btn-ghost" 
                   hx-delete="/api/v1/tracks/${track.id}" 
                   hx-confirm="Delete '${track.title}'?"
