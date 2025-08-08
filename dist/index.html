@@ -23,10 +23,8 @@
                 max-height: 180px !important;
             }
             
-            /* Stack album art vertically on mobile */
-            .card-body .flex {
-                flex-direction: column !important;
-            }
+            /* Don't apply flex-direction to all flex elements */
+            /* This was too broad and broke the layout */
             
             /* Full width buttons on mobile */
             .btn-group {
