@@ -3,6 +3,7 @@
 
 import { parseZipFile, extractMetadataFromFiles, parseTrackInfoFromFilename } from './zip-utils.mjs';
 import { setAlbumTags, setTrackTags, searchByTag, getPopularTags } from './tag-operations.mjs';
+import { handleRegister, handleLogin, handleLogout, requireAuth, checkPermission } from './auth.mjs';
 
 export default {
   async fetch(request, env, ctx) {
@@ -36,7 +37,16 @@ export default {
     }
     
     try {
-      // Route requests
+      // Auth routes (no auth required)
+      if (path === '/auth/register' && method === 'POST') {
+        return await handleRegister(request, env);
+      } else if (path === '/auth/login' && method === 'POST') {
+        return await handleLogin(request, env);
+      } else if (path === '/auth/logout' && method === 'POST') {
+        return await handleLogout(request, env);
+      }
+      
+      // Public routes
       if (path === '/') {
         return handleRoot();
       } else if (path === '/health') {
