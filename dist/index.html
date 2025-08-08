@@ -9,34 +9,6 @@
     <script src="https://unpkg.com/htmx.org@1.9.9"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
     <link href="/static/css/app.css" rel="stylesheet">
-    <style>
-        /* Mobile-specific fixes */
-        @media (max-width: 640px) {
-            /* Fix main content padding for mobile */
-            main {
-                padding-bottom: 200px !important;
-            }
-            
-            /* Make audio player more compact on mobile */
-            .audio-player {
-                height: auto !important;
-                max-height: 180px !important;
-            }
-            
-            /* Don't apply flex-direction to all flex elements */
-            /* This was too broad and broke the layout */
-            
-            /* Full width buttons on mobile */
-            .btn-group {
-                width: 100%;
-                display: flex;
-            }
-            
-            .btn-group .btn {
-                flex: 1;
-            }
-        }
-    </style>
 </head>
 <body class="min-h-screen bg-base-100">
     <!-- Mobile Menu Button -->
