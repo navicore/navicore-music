@@ -89,6 +89,13 @@
                         <span>Upload</span>
                     </a>
                 </nav>
+                
+                <!-- User Section at Bottom -->
+                <div class="mt-auto pt-8 border-t border-base-300">
+                    <div id="auth-status" class="px-2">
+                        <!-- Auth status loads here -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -170,6 +177,14 @@
                     swap: 'innerHTML'
                 });
                 window.updateActiveNav('#music');
+            } else if (hash === '#login') {
+                currentLoadedPage = 'login';
+                htmx.ajax('GET', '/templates/login', '#main-content');
+                window.updateActiveNav();
+            } else if (hash === '#register') {
+                currentLoadedPage = 'register';
+                htmx.ajax('GET', '/templates/register', '#main-content');
+                window.updateActiveNav();
             } else if (hash.startsWith('#track/')) {
                 // Direct track link
                 const trackId = hash.substring(7);
@@ -195,6 +210,77 @@
             window.handleHashChange();
         });
         
+        // Check authentication status
+        window.checkAuthStatus = async function() {
+            try {
+                const response = await fetch('https://api.navicore.tech/auth/status', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                const authStatusEl = document.getElementById('auth-status');
+                if (data.authenticated) {
+                    authStatusEl.innerHTML = `
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="avatar placeholder">
+                                <div class="bg-primary text-primary-content rounded-full w-8">
+                                    <span class="text-xs">${data.user.displayName.charAt(0).toUpperCase()}</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-sm font-semibold">${data.user.displayName}</div>
+                                <div class="text-xs opacity-60">${data.user.email}</div>
+                            </div>
+                        </div>
+                        <button onclick="handleLogout()" class="btn btn-ghost btn-sm w-full">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            Sign Out
+                        </button>
+                    `;
+                } else {
+                    authStatusEl.innerHTML = `
+                        <a href="#login" 
+                           hx-get="/templates/login" 
+                           hx-target="#main-content" 
+                           hx-push-url="#login"
+                           class="btn btn-primary btn-sm w-full mb-2">
+                            Sign In
+                        </a>
+                        <a href="#register" 
+                           hx-get="/templates/register" 
+                           hx-target="#main-content" 
+                           hx-push-url="#register"
+                           class="btn btn-ghost btn-sm w-full">
+                            Create Account
+                        </a>
+                    `;
+                }
+            } catch (error) {
+                console.error('Failed to check auth status:', error);
+            }
+        };
+        
+        // Handle logout
+        window.handleLogout = async function() {
+            try {
+                const response = await fetch('https://api.navicore.tech/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // Refresh auth status
+                    window.checkAuthStatus();
+                    // Redirect to home
+                    window.location.hash = '#home';
+                }
+            } catch (error) {
+                console.error('Logout failed:', error);
+            }
+        };
+        
         // Initialize page
         let pageInitialized = false;
         function initializePage() {
@@ -203,6 +289,9 @@
             }
             pageInitialized = true;
             
+            
+            // Check auth status on load
+            window.checkAuthStatus();
             
             // Default to home page if no hash
             if (!window.location.hash || window.location.hash === '') {

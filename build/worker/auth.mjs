@@ -472,6 +472,39 @@ export async function handleLogout(request, env) {
   });
 }
 
+export async function handleAuthStatus(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+  
+  const user = await requireAuth(request, env);
+  
+  if (user) {
+    return new Response(JSON.stringify({
+      authenticated: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.display_name,
+        emailVerified: user.email_verified
+      }
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } else {
+    return new Response(JSON.stringify({
+      authenticated: false
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 // Middleware to check authentication
 export async function requireAuth(request, env) {
   // Check for JWT in cookie or Authorization header

@@ -3,7 +3,7 @@
 
 import { parseZipFile, extractMetadataFromFiles, parseTrackInfoFromFilename } from './zip-utils.mjs';
 import { setAlbumTags, setTrackTags, searchByTag, getPopularTags } from './tag-operations.mjs';
-import { handleRegister, handleLogin, handleLogout, requireAuth, checkPermission } from './auth.mjs';
+import { handleRegister, handleLogin, handleLogout, handleAuthStatus, requireAuth, checkPermission } from './auth.mjs';
 
 export default {
   async fetch(request, env, ctx) {
@@ -44,6 +44,8 @@ export default {
         return await handleLogin(request, env);
       } else if (path === '/auth/logout' && method === 'POST') {
         return await handleLogout(request, env);
+      } else if (path === '/auth/status' && method === 'GET') {
+        return await handleAuthStatus(request, env);
       }
       
       // Public routes
@@ -59,17 +61,49 @@ export default {
         const id = path.split('/').pop();
         return await handleGetTrack(id, env);
       } else if (path.match(/^\/api\/v1\/tracks\/[^\/]+$/) && method === 'DELETE') {
+        // Check authentication for deletes
+        const user = await requireAuth(request, env);
+        if (!user) {
+          return new Response(JSON.stringify({ error: 'Authentication required' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
         const id = path.split('/').pop();
-        return await handleDeleteTrack(id, env);
+        return await handleDeleteTrack(id, env, user);
       } else if (path.match(/^\/api\/v1\/tracks\/[^\/]+\/stream$/) && method === 'GET') {
         const id = path.split('/')[4];
         return await handleGetStreamUrl(id, env, request);
       } else if (path === '/api/v1/upload/file' && method === 'POST') {
-        return await handleFileUpload(request, env);
+        // Check authentication for uploads
+        const user = await requireAuth(request, env);
+        if (!user) {
+          return new Response(JSON.stringify({ error: 'Authentication required' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        return await handleFileUpload(request, env, user);
       } else if (path === '/api/v1/upload/album' && method === 'POST') {
-        return await handleAlbumUpload(request, env);
+        // Check authentication for uploads
+        const user = await requireAuth(request, env);
+        if (!user) {
+          return new Response(JSON.stringify({ error: 'Authentication required' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        return await handleAlbumUpload(request, env, user);
       } else if (path === '/api/v1/upload/cover' && method === 'POST') {
-        return await handleCoverUpload(request, env);
+        // Check authentication for uploads
+        const user = await requireAuth(request, env);
+        if (!user) {
+          return new Response(JSON.stringify({ error: 'Authentication required' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        return await handleCoverUpload(request, env, user);
       } else if (path.match(/^\/api\/v1\/tracks\/[^\/]+\/cover$/) && method === 'GET') {
         const id = path.split('/')[4];
         return await handleGetCover(id, env, request);
@@ -87,6 +121,10 @@ export default {
         return await serveStaticTemplate('home.html');
       } else if (path === '/templates/upload.html' && method === 'GET') {
         return await serveStaticTemplate('upload.html');
+      } else if (path === '/templates/login' && method === 'GET') {
+        return await serveStaticTemplate('login.html');
+      } else if (path === '/templates/register' && method === 'GET') {
+        return await serveStaticTemplate('register.html');
       } else if (path.match(/^\/album\/.+$/) && method === 'GET') {
         return await handleAlbumPage(request, env);
       } else if (path.match(/^\/track\/.+$/) && method === 'GET') {
@@ -251,7 +289,7 @@ async function handleGetTrack(id, env) {
   });
 }
 
-async function handleDeleteTrack(id, env) {
+async function handleDeleteTrack(id, env, user) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -383,7 +421,7 @@ async function handleGetStreamUrl(trackId, env, request) {
   }
 }
 
-async function handleFileUpload(request, env) {
+async function handleFileUpload(request, env, user) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -567,7 +605,7 @@ async function handleFileUpload(request, env) {
   }
 }
 
-async function handleAlbumUpload(request, env) {
+async function handleAlbumUpload(request, env, user) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -697,7 +735,7 @@ async function handleAlbumUpload(request, env) {
   }
 }
 
-async function handleCoverUpload(request, env) {
+async function handleCoverUpload(request, env, user) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',

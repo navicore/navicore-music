@@ -10,6 +10,7 @@ on:
         options:
           - debug
           - wipe-and-recreate
+          - create-auth-tables
       confirm:
         description: 'Type "CONFIRM" to proceed with wipe-and-recreate'
         required: false
@@ -130,3 +131,21 @@ jobs:
           
           echo ""
           echo "✅ Database recreated successfully and verified empty!"
+      
+      # Create auth tables action
+      - name: Create Auth Tables
+        if: github.event.inputs.action == 'create-auth-tables'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🔐 Creating authentication tables..."
+          
+          # Execute the auth schema file
+          wrangler d1 execute navicore-music --remote --file=schema-auth-traditional.sql
+          
+          echo "✅ Auth tables created"
+          
+          echo ""
+          echo "📋 Verifying auth tables:"
+          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%auth%' OR name LIKE '%user%' OR name LIKE '%session%' ORDER BY name;"
