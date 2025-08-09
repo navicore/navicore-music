@@ -68,25 +68,34 @@
 </div>
 
 <script>
-// Debug checkbox
-window.addEventListener('DOMContentLoaded', function() {
+// Debug checkbox - run immediately since template is loaded dynamically
+(function() {
+    console.log('Login template loaded, checking for checkbox...');
     const checkbox = document.getElementById('rememberMe');
     if (checkbox) {
         console.log('Checkbox found:', checkbox);
         console.log('Checkbox disabled?', checkbox.disabled);
         console.log('Checkbox readonly?', checkbox.readOnly);
+        console.log('Checkbox computed style:', window.getComputedStyle(checkbox));
         
         // Add click handler to debug
         checkbox.addEventListener('click', function(e) {
-            console.log('Checkbox clicked!', this.checked);
+            console.log('Checkbox clicked! Checked:', this.checked);
+        });
+        
+        // Check parent for click handler
+        checkbox.parentElement.addEventListener('click', function(e) {
+            console.log('Parent clicked, target:', e.target);
         });
         
         // Try to make it more clickable
         checkbox.style.position = 'relative';
         checkbox.style.zIndex = '10';
         checkbox.style.pointerEvents = 'auto';
+    } else {
+        console.error('Checkbox #rememberMe not found!');
     }
-});
+})();
 
 // Prevent multiple simultaneous submissions
 let isSubmitting = false;
