@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth Cookie</title>
+</head>
+<body>
+    <h1>Debug Auth Cookie Issues</h1>
+    
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="checkStatus()">Check Status</button>
+    <button onclick="checkCookie()">Check Cookie</button>
+    <button onclick="testWithFetch()">Test with Fetch</button>
+    
+    <pre id="result"></pre>
+    
+    <script>
+        function log(msg) {
+            document.getElementById('result').textContent += msg + '\n';
+        }
+        
+        async function testLogin() {
+            log('Testing login...');
+            const email = prompt('Email:');
+            const password = prompt('Password:');
+            
+            const response = await fetch('https://api.navicore.tech/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            log('Response status: ' + response.status);
+            log('Response headers:');
+            for (let [key, value] of response.headers) {
+                if (key.toLowerCase().includes('cookie') || key.toLowerCase().includes('cors')) {
+                    log(`  ${key}: ${value}`);
+                }
+            }
+            log('Response body: ' + JSON.stringify(data, null, 2));
+            
+            // Check document.cookie
+            log('Document.cookie: ' + document.cookie);
+        }
+        
+        async function checkStatus() {
+            log('\nChecking auth status...');
+            const response = await fetch('https://api.navicore.tech/auth/status', {
+                credentials: 'include'
+            });
+            
+            const data = await response.json();
+            log('Status response: ' + JSON.stringify(data, null, 2));
+            log('Document.cookie: ' + document.cookie);
+        }
+        
+        function checkCookie() {
+            log('\nCurrent cookies:');
+            log('document.cookie: ' + document.cookie);
+            
+            // Try to read all cookies
+            const cookies = document.cookie.split(';');
+            cookies.forEach(cookie => {
+                log('  Cookie: ' + cookie.trim());
+            });
+        }
+        
+        async function testWithFetch() {
+            log('\nTesting cookie persistence...');
+            
+            // First set a test cookie
+            document.cookie = "test_cookie=test_value; path=/";
+            log('Set test_cookie=test_value');
+            log('Document.cookie: ' + document.cookie);
+            
+            // Now check auth
+            const response = await fetch('https://api.navicore.tech/auth/status', {
+                credentials: 'include',
+                headers: {
+                    'Cookie': document.cookie
+                }
+            });
+            
+            const data = await response.json();
+            log('Auth status: ' + JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>

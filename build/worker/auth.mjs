@@ -304,7 +304,7 @@ export async function handleRegister(request, env) {
       headers: { 
         ...corsHeaders, 
         'Content-Type': 'application/json',
-        'Set-Cookie': `auth_token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${7 * 24 * 60 * 60}`
+        'Set-Cookie': `auth_token=${jwt}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${7 * 24 * 60 * 60}`
       }
     });
     
@@ -439,7 +439,7 @@ export async function handleLogin(request, env) {
       headers: { 
         ...corsHeaders, 
         'Content-Type': 'application/json',
-        'Set-Cookie': `auth_token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAge / 1000}`
+        'Set-Cookie': `auth_token=${jwt}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`
       }
     });
     
@@ -473,7 +473,7 @@ export async function handleLogout(request, env) {
     headers: { 
       ...corsHeaders, 
       'Content-Type': 'application/json',
-      'Set-Cookie': 'auth_token=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'
+      'Set-Cookie': 'auth_token=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0'
     }
   });
 }
