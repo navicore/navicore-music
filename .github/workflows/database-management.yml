@@ -11,6 +11,7 @@ on:
           - debug
           - wipe-and-recreate
           - create-auth-tables
+          - setup-super-admin
       confirm:
         description: 'Type "CONFIRM" to proceed with wipe-and-recreate'
         required: false
@@ -149,3 +150,21 @@ jobs:
           echo ""
           echo "📋 Verifying auth tables:"
           wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE '%user%' OR name LIKE '%session%' OR name LIKE '%auth%' OR name LIKE '%artist%') ORDER BY name;"
+      
+      # Setup super admin action
+      - name: Setup Super Admin
+        if: github.event.inputs.action == 'setup-super-admin'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "👑 Setting up super admin..."
+          
+          # Add super admin column and set first user as super admin
+          wrangler d1 execute navicore-music --remote --file=schema-add-superadmin.sql
+          
+          echo "✅ Super admin setup complete"
+          
+          echo ""
+          echo "📋 Verifying super admin:"
+          wrangler d1 execute navicore-music --remote --command="SELECT id, email, display_name, is_super_admin FROM users WHERE is_super_admin = 1;"
