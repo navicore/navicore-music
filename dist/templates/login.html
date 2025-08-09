@@ -96,7 +96,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
         rememberMe: document.getElementById('rememberMe').checked,
         mfaCode: formData.get('mfaCode')
     };
-    console.log('Login data:', { ...data, password: '***' });
+    console.log('Login attempt for:', data.email, 'Remember me:', data.rememberMe);
     
     try {
         const response = await fetch('https://api.navicore.tech/auth/login', {

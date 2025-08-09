@@ -86,7 +86,7 @@ function generateToken() {
 }
 
 // Create JWT token
-async function createJWT(userId, email, env) {
+async function createJWT(userId, email, env, expirationSeconds = 7 * 24 * 60 * 60) {
   const header = {
     alg: 'HS256',
     typ: 'JWT'
@@ -96,7 +96,7 @@ async function createJWT(userId, email, env) {
     sub: userId,
     email: email,
     iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+    exp: Math.floor(Date.now() / 1000) + expirationSeconds
   };
   
   const encoder = new TextEncoder();
@@ -291,8 +291,8 @@ export async function handleRegister(request, env) {
     
     await recordAttempt(email, 'register', true, ip, env);
     
-    // Create session
-    const jwt = await createJWT(userId, email, env);
+    // Create session (default 7 days for new registrations)
+    const jwt = await createJWT(userId, email, env, SESSION_DURATION / 1000);
     
     return new Response(JSON.stringify({ 
       success: true,
@@ -422,8 +422,16 @@ export async function handleLogin(request, env) {
     await recordAttempt(email, 'login', true, ip, env);
     
     // Create session
-    const jwt = await createJWT(user.id, user.email, env);
     const maxAge = rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION;
+    const jwt = await createJWT(user.id, user.email, env, maxAge / 1000);
+    
+    console.log('Login successful:', {
+      email: user.email,
+      rememberMe: rememberMe,
+      maxAgeMs: maxAge,
+      maxAgeSec: maxAge / 1000,
+      maxAgeDays: maxAge / 1000 / 60 / 60 / 24
+    });
     
     return new Response(JSON.stringify({ 
       success: true,
