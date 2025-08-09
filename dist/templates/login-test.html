@@ -1,0 +1,49 @@
+<!-- Test login with plain checkbox -->
+<div class="min-h-screen flex items-center justify-center px-4">
+    <div class="max-w-md w-full space-y-8">
+        <h2 class="text-2xl">Checkbox Test</h2>
+        
+        <!-- Test 1: Plain HTML checkbox -->
+        <div>
+            <label>
+                <input type="checkbox" id="test1"> Plain HTML checkbox
+            </label>
+        </div>
+        
+        <!-- Test 2: With some Tailwind classes -->
+        <div>
+            <label class="flex items-center gap-2">
+                <input type="checkbox" id="test2" class="w-4 h-4"> 
+                Tailwind styled checkbox
+            </label>
+        </div>
+        
+        <!-- Test 3: DaisyUI checkbox -->
+        <div>
+            <label class="flex items-center gap-2">
+                <input type="checkbox" id="test3" class="checkbox checkbox-primary checkbox-sm">
+                DaisyUI checkbox
+            </label>
+        </div>
+        
+        <!-- Test 4: Current implementation -->
+        <div class="flex items-center justify-between">
+            <label for="rememberMe" class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" 
+                       name="rememberMe" 
+                       id="rememberMe"
+                       class="checkbox checkbox-primary checkbox-sm"
+                       value="true">
+                <span class="text-sm">Remember me for 30 days</span>
+            </label>
+        </div>
+        
+        <script>
+            document.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => {
+                cb.addEventListener('change', function() {
+                    console.log(`Checkbox ${i+1} changed:`, this.checked);
+                });
+            });
+        </script>
+    </div>
+</div>
