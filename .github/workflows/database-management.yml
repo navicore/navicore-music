@@ -141,11 +141,11 @@ jobs:
         run: |
           echo "🔐 Creating authentication tables..."
           
-          # Execute the auth schema file
-          wrangler d1 execute navicore-music --remote --file=schema-auth-traditional.sql
+          # Execute the auth migration file (handles existing tables)
+          wrangler d1 execute navicore-music --remote --file=schema-auth-migration.sql
           
           echo "✅ Auth tables created"
           
           echo ""
           echo "📋 Verifying auth tables:"
-          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%auth%' OR name LIKE '%user%' OR name LIKE '%session%' ORDER BY name;"
+          wrangler d1 execute navicore-music --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE '%user%' OR name LIKE '%session%' OR name LIKE '%auth%' OR name LIKE '%artist%') ORDER BY name;"

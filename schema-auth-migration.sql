@@ -1,15 +1,17 @@
--- Traditional Authentication Schema
--- Password-based with optional TOTP MFA
--- No passkeys, no nagging, just works
--- For Cloudflare D1 Database
+-- Migration script to add auth tables
+-- Handles case where basic users table might already exist
 
+-- Drop old basic users table if it exists (it had no real data)
+DROP TABLE IF EXISTS users;
+
+-- Create new auth tables with full schema
 -- Users table with password support
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     email TEXT UNIQUE NOT NULL,
     email_verified BOOLEAN DEFAULT 0,
     
-    -- Password auth (using Argon2id hashing)
+    -- Password auth (using PBKDF2 for Cloudflare Workers)
     password_hash TEXT NOT NULL,
     
     -- Profile
@@ -83,22 +85,34 @@ CREATE TABLE IF NOT EXISTS auth_attempts (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Email queue for verification/reset emails
-CREATE TABLE IF NOT EXISTS email_queue (
+-- Artist profiles (separate from users for flexibility)
+CREATE TABLE IF NOT EXISTS artist_profiles (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-    to_email TEXT NOT NULL,
-    template TEXT NOT NULL, -- 'verify', 'reset', 'welcome'
-    
-    -- Template data
-    data TEXT, -- JSON with template variables
-    
-    -- Status
-    sent BOOLEAN DEFAULT 0,
-    sent_at DATETIME,
-    error TEXT,
-    
+    name TEXT UNIQUE NOT NULL,
+    bio TEXT,
+    avatar_url TEXT,
+    website TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    expires_at DATETIME -- Don't send old emails
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User to artist relationships with granular permissions
+CREATE TABLE IF NOT EXISTS artist_permissions (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    user_id TEXT NOT NULL,
+    artist_profile_id TEXT NOT NULL,
+    
+    -- Granular permissions
+    permission TEXT NOT NULL, -- 'upload', 'edit', 'delete', 'manage_permissions'
+    
+    -- Optional expiry for temporary permissions
+    granted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    granted_by TEXT, -- user_id who granted permission
+    expires_at DATETIME,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (artist_profile_id) REFERENCES artist_profiles(id) ON DELETE CASCADE,
+    UNIQUE(user_id, artist_profile_id, permission)
 );
 
 -- Indexes
@@ -109,11 +123,5 @@ CREATE INDEX IF NOT EXISTS idx_user_mfa_user ON user_mfa(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token_hash);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_auth_attempts_identifier ON auth_attempts(identifier, created_at);
-CREATE INDEX IF NOT EXISTS idx_email_queue_status ON email_queue(sent, created_at);
-
--- Clean, simple auth flow:
--- 1. Register: email + password
--- 2. Login: email + password (+ TOTP if enabled)
--- 3. Optional: Enable TOTP MFA
--- 4. Sessions: JWT in cookie or Authorization header
--- 5. No popups about passkeys, security keys, or other nonsense
+CREATE INDEX IF NOT EXISTS idx_artist_permissions_user ON artist_permissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_artist_permissions_artist ON artist_permissions(artist_profile_id);
