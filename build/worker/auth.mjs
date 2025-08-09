@@ -192,10 +192,12 @@ async function recordAttempt(identifier, type, success, ip, env) {
 // AUTHENTICATION HANDLERS
 
 export async function handleRegister(request, env) {
+  const origin = request.headers.get('Origin') || 'https://music.navicore.tech';
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
   };
   
   try {
@@ -319,10 +321,12 @@ export async function handleRegister(request, env) {
 }
 
 export async function handleLogin(request, env) {
+  const origin = request.headers.get('Origin') || 'https://music.navicore.tech';
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
   };
   
   try {
@@ -452,10 +456,12 @@ export async function handleLogin(request, env) {
 }
 
 export async function handleLogout(request, env) {
+  const origin = request.headers.get('Origin') || 'https://music.navicore.tech';
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
   };
   
   // Clear the auth cookie
@@ -473,8 +479,9 @@ export async function handleLogout(request, env) {
 }
 
 export async function handleAuthStatus(request, env) {
+  const origin = request.headers.get('Origin') || 'https://music.navicore.tech';
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Credentials': 'true',

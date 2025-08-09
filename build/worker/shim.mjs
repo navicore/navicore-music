@@ -12,10 +12,14 @@ export default {
     const method = request.method;
     
     // Enable CORS with HTMX headers
+    const origin = request.headers.get('Origin') || 'https://music.navicore.tech';
+    const isAuthEndpoint = path.startsWith('/auth/');
+    
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': isAuthEndpoint ? origin : '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, HX-Current-URL, HX-Request, HX-Target, HX-Trigger',
+      ...(isAuthEndpoint && { 'Access-Control-Allow-Credentials': 'true' })
     };
     
     // Handle preflight requests
