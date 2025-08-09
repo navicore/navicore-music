@@ -67,10 +67,20 @@
 </div>
 
 <script>
+// Prevent multiple simultaneous submissions
+let isSubmitting = false;
+
 // Handle form submission
 document.getElementById('login-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Prevent double submission
+    if (isSubmitting) {
+        console.log('Login already in progress, ignoring duplicate submission');
+        return;
+    }
+    
+    isSubmitting = true;
     const submitButton = this.querySelector('button[type="submit"]');
     const spinner = document.getElementById('login-spinner');
     const authMessage = document.getElementById('auth-message');
@@ -99,10 +109,10 @@ document.getElementById('login-form').addEventListener('submit', async function(
         });
         
         const result = await response.json();
+        console.log('Login response:', response.status, result);
         
-        if (response.ok) {
-            if (result.success) {
-                // Success message first
+        // Only show success if explicitly successful
+        if (response.ok && result.success === true) {
                 authMessage.innerHTML = `
                     <div class="alert alert-success">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +128,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
                     window.location.href = '/#music';
                     window.location.reload();
                 }, 500);
-            } else if (result.mfaRequired) {
+        } else if (response.ok && result.mfaRequired) {
                 // Show MFA input
                 authMessage.innerHTML = `
                     <div class="form-control">
@@ -133,15 +143,24 @@ document.getElementById('login-form').addEventListener('submit', async function(
                                pattern="[0-9]{6}">
                     </div>
                 `;
-            }
         } else {
+            // All other cases are errors
+            let errorMessage = result.error || 'Login failed';
+            let errorIcon = 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+            
+            // Special handling for rate limiting
+            if (response.status === 429) {
+                errorMessage = result.error || 'Too many login attempts. Please wait a few minutes.';
+                errorIcon = 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z';
+            }
+            
             authMessage.innerHTML = `
                 <div class="alert alert-error">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                              d="${errorIcon}"></path>
                     </svg>
-                    <span>${result.error || 'Login failed'}</span>
+                    <span>${errorMessage}</span>
                 </div>
             `;
         }
@@ -158,6 +177,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
     } finally {
         spinner.classList.add('htmx-indicator');
         submitButton.disabled = false;
+        isSubmitting = false;
     }
 });
 </script>
