@@ -115,22 +115,21 @@ document.getElementById('login-form').addEventListener('submit', async function(
         
         // Only show success if explicitly successful
         if (response.ok && result.success === true) {
-            console.log('Login successful, showing success message');
-                authMessage.innerHTML = `
-                    <div class="alert alert-success">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>Login successful! Redirecting...</span>
-                    </div>
-                `;
-                
-                // Reload the page to refresh auth status and redirect
-                setTimeout(() => {
-                    window.location.href = '/#music';
-                    window.location.reload();
-                }, 500);
+            console.log('Login successful, redirecting...');
+            authMessage.innerHTML = `
+                <div class="alert alert-success">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Login successful! Redirecting...</span>
+                </div>
+            `;
+            
+            // Single clean redirect - just replace the current page
+            setTimeout(() => {
+                window.location.replace('/#music');
+            }, 100);
         } else if (response.ok && result.mfaRequired) {
                 // Show MFA input
                 authMessage.innerHTML = `
