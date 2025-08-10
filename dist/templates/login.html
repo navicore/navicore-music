@@ -120,8 +120,16 @@ if (!loginForm) {
         console.log('Login response - Status:', response.status, 'OK:', response.ok, 'Result:', result);
         
         // Only show success if explicitly successful
-        if (response.ok && result.success === true) {
-            console.log('Login successful!');
+        if (response.ok && result.success === true && result.token) {
+            console.log('Login successful! Storing token...');
+            
+            // Store token and user info in localStorage
+            localStorage.setItem('auth_token', result.token);
+            localStorage.setItem('user', JSON.stringify(result.user));
+            if (result.expiresIn) {
+                const expiresAt = Date.now() + (result.expiresIn * 1000);
+                localStorage.setItem('token_expires', expiresAt.toString());
+            }
             
             // Show success message
             authMessage.innerHTML = `
@@ -134,12 +142,9 @@ if (!loginForm) {
                 </div>
             `;
             
-            // Trust that login worked - don't verify
-            // Just reload the page which will check auth status naturally
-            setTimeout(() => {
-                window.location.href = '/#music';
-                window.location.reload();
-            }, 500);
+            // Redirect immediately - localStorage is synchronous
+            window.location.href = '/#music';
+            window.location.reload();
         } else if (response.ok && result.mfaRequired) {
                 // Show MFA input
                 authMessage.innerHTML = `

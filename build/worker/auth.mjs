@@ -297,14 +297,21 @@ export async function handleRegister(request, env) {
     return new Response(JSON.stringify({ 
       success: true,
       message: 'Registration successful. Please check your email to verify your account.',
+      user: {
+        id: userId,
+        email: email,
+        displayName: displayName,
+        emailVerified: false
+      },
       token: jwt, // Include JWT for immediate login
+      expiresIn: SESSION_DURATION / 1000,
       verifyToken: verifyToken // REMOVE IN PRODUCTION - for testing only
     }), {
       status: 201,
       headers: { 
         ...corsHeaders, 
-        'Content-Type': 'application/json',
-        'Set-Cookie': `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${7 * 24 * 60 * 60}`
+        'Content-Type': 'application/json'
+        // No Set-Cookie - token goes in response body
       }
     });
     
@@ -425,17 +432,15 @@ export async function handleLogin(request, env) {
     const maxAge = rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION;
     const jwt = await createJWT(user.id, user.email, env, maxAge / 1000);
     
-    // Set cookie for all *.navicore.tech subdomains
-    const cookieValue = `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
     console.log('Login successful:', {
       email: user.email,
       rememberMe: rememberMe,
       maxAgeMs: maxAge,
       maxAgeSec: maxAge / 1000,
-      maxAgeDays: maxAge / 1000 / 60 / 60 / 24,
-      setCookie: cookieValue
+      maxAgeDays: maxAge / 1000 / 60 / 60 / 24
     });
     
+    // Return token in response body for localStorage, not as cookie
     return new Response(JSON.stringify({ 
       success: true,
       user: {
@@ -444,13 +449,14 @@ export async function handleLogin(request, env) {
         displayName: user.display_name,
         emailVerified: user.email_verified
       },
-      token: jwt
+      token: jwt,
+      expiresIn: maxAge / 1000
     }), {
       status: 200,
       headers: { 
         ...corsHeaders, 
-        'Content-Type': 'application/json',
-        'Set-Cookie': cookieValue
+        'Content-Type': 'application/json'
+        // No Set-Cookie header - token goes in response body
       }
     });
     
@@ -471,19 +477,12 @@ export async function handleLogout(request, env) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true',
   };
   
-  console.log('Logout request received from:', origin);
-  
-  // Clear the auth cookie by setting it to expire immediately
-  // Use exact same parameters as login but with Max-Age=0 and expires in the past
-  const expiredDate = new Date(0).toUTCString();
-  const clearCookie = `auth_token=; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0; Expires=${expiredDate}`;
-  
-  console.log('Clearing cookie with:', clearCookie);
-  
+  // With localStorage/Bearer tokens, logout is handled client-side
+  // Server just acknowledges the request
   return new Response(JSON.stringify({ 
     success: true,
     message: 'Logged out successfully' 
@@ -491,8 +490,8 @@ export async function handleLogout(request, env) {
     status: 200,
     headers: { 
       ...corsHeaders, 
-      'Content-Type': 'application/json',
-      'Set-Cookie': clearCookie
+      'Content-Type': 'application/json'
+      // No cookie clearing needed - auth is via Bearer tokens
     }
   });
 }
@@ -502,13 +501,9 @@ export async function handleAuthStatus(request, env) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true',
   };
-  
-  // Debug cookie reception
-  const cookie = request.headers.get('Cookie');
-  console.log('Auth status check - Cookie header:', cookie);
   
   const user = await requireAuth(request, env);
   
@@ -537,25 +532,14 @@ export async function handleAuthStatus(request, env) {
 
 // Middleware to check authentication
 export async function requireAuth(request, env) {
-  // Check for JWT in cookie or Authorization header
-  const cookie = request.headers.get('Cookie');
+  // Check for JWT in Authorization header (no more cookie checks)
   const authHeader = request.headers.get('Authorization');
-  
-  console.log('requireAuth - Cookie:', cookie);
-  console.log('requireAuth - Auth header:', authHeader);
   
   let token = null;
   
-  if (cookie) {
-    const match = cookie.match(/auth_token=([^;]+)/);
-    if (match) token = match[1];
-    console.log('requireAuth - Extracted token from cookie:', token ? 'yes' : 'no');
-  }
-  
-  if (!token && authHeader) {
+  if (authHeader) {
     const match = authHeader.match(/Bearer (.+)/);
     if (match) token = match[1];
-    console.log('requireAuth - Extracted token from header:', token ? 'yes' : 'no');
   }
   
   if (!token) {
