@@ -425,9 +425,8 @@ export async function handleLogin(request, env) {
     const maxAge = rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION;
     const jwt = await createJWT(user.id, user.email, env, maxAge / 1000);
     
-    // Try setting cookie without Domain attribute first
-    // This will set it specifically for api.navicore.tech
-    const cookieValue = `auth_token=${jwt}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
+    // Set cookie for all *.navicore.tech subdomains
+    const cookieValue = `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
     console.log('Login successful:', {
       email: user.email,
       rememberMe: rememberMe,
