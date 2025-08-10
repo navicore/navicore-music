@@ -115,21 +115,48 @@ document.getElementById('login-form').addEventListener('submit', async function(
         
         // Only show success if explicitly successful
         if (response.ok && result.success === true) {
-            console.log('Login successful, redirecting...');
-            authMessage.innerHTML = `
-                <div class="alert alert-success">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>Login successful! Redirecting...</span>
-                </div>
-            `;
+            console.log('Login successful, verifying session...');
             
-            // Single clean redirect - just replace the current page
-            setTimeout(() => {
-                window.location.replace('/#music');
-            }, 100);
+            // Verify the session was established before redirecting
+            const verifyResponse = await fetch('https://api.navicore.tech/auth/status', {
+                credentials: 'include'
+            });
+            const verifyData = await verifyResponse.json();
+            
+            if (verifyData.authenticated) {
+                console.log('Session verified, redirecting...');
+                authMessage.innerHTML = `
+                    <div class="alert alert-success">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Login successful!</span>
+                    </div>
+                `;
+                
+                // Update the sidebar if the function exists
+                if (window.checkAuthStatus) {
+                    window.checkAuthStatus();
+                }
+                
+                // Navigate to music page
+                window.location.hash = '#music';
+                if (window.handleHashChange) {
+                    window.handleHashChange();
+                }
+            } else {
+                console.error('Login succeeded but session not established');
+                authMessage.innerHTML = `
+                    <div class="alert alert-error">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Session could not be established. Please try again.</span>
+                    </div>
+                `;
+            }
         } else if (response.ok && result.mfaRequired) {
                 // Show MFA input
                 authMessage.innerHTML = `
