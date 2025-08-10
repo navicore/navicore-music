@@ -425,12 +425,14 @@ export async function handleLogin(request, env) {
     const maxAge = rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION;
     const jwt = await createJWT(user.id, user.email, env, maxAge / 1000);
     
+    const cookieValue = `auth_token=${jwt}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
     console.log('Login successful:', {
       email: user.email,
       rememberMe: rememberMe,
       maxAgeMs: maxAge,
       maxAgeSec: maxAge / 1000,
-      maxAgeDays: maxAge / 1000 / 60 / 60 / 24
+      maxAgeDays: maxAge / 1000 / 60 / 60 / 24,
+      setCookie: cookieValue
     });
     
     return new Response(JSON.stringify({ 
@@ -447,7 +449,7 @@ export async function handleLogin(request, env) {
       headers: { 
         ...corsHeaders, 
         'Content-Type': 'application/json',
-        'Set-Cookie': `auth_token=${jwt}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`
+        'Set-Cookie': cookieValue
       }
     });
     
@@ -495,6 +497,10 @@ export async function handleAuthStatus(request, env) {
     'Access-Control-Allow-Credentials': 'true',
   };
   
+  // Debug cookie reception
+  const cookie = request.headers.get('Cookie');
+  console.log('Auth status check - Cookie header:', cookie);
+  
   const user = await requireAuth(request, env);
   
   if (user) {
@@ -526,19 +532,25 @@ export async function requireAuth(request, env) {
   const cookie = request.headers.get('Cookie');
   const authHeader = request.headers.get('Authorization');
   
+  console.log('requireAuth - Cookie:', cookie);
+  console.log('requireAuth - Auth header:', authHeader);
+  
   let token = null;
   
   if (cookie) {
     const match = cookie.match(/auth_token=([^;]+)/);
     if (match) token = match[1];
+    console.log('requireAuth - Extracted token from cookie:', token ? 'yes' : 'no');
   }
   
   if (!token && authHeader) {
     const match = authHeader.match(/Bearer (.+)/);
     if (match) token = match[1];
+    console.log('requireAuth - Extracted token from header:', token ? 'yes' : 'no');
   }
   
   if (!token) {
+    console.log('requireAuth - No token found');
     return null;
   }
   
