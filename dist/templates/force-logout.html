@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Logout</title>
+</head>
+<body>
+    <h1>Force Logout Debug Page</h1>
+    
+    <button onclick="clearEverything()">Clear EVERYTHING</button>
+    <button onclick="checkAuth()">Check Auth Status</button>
+    <button onclick="callLogout()">Call Logout Endpoint</button>
+    
+    <pre id="result"></pre>
+    
+    <script>
+        function log(msg) {
+            document.getElementById('result').textContent += msg + '\n';
+        }
+        
+        async function clearEverything() {
+            log('Clearing all auth data...');
+            
+            // Clear all cookies for this domain
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/;domain=.navicore.tech");
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/;domain=navicore.tech");
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/;domain=music.navicore.tech");
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/;domain=api.navicore.tech");
+            });
+            
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            
+            log('Cleared cookies: ' + document.cookie);
+            log('Cleared localStorage');
+            log('Cleared sessionStorage');
+            
+            // Now check if we're still authenticated
+            await checkAuth();
+        }
+        
+        async function checkAuth() {
+            log('\nChecking authentication status...');
+            
+            try {
+                const response = await fetch('https://api.navicore.tech/auth/status', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                log('Auth status: ' + JSON.stringify(data, null, 2));
+                
+                // Also check what cookies are being sent
+                log('\nCurrent cookies: ' + document.cookie);
+                
+            } catch (error) {
+                log('Error checking auth: ' + error.message);
+            }
+        }
+        
+        async function callLogout() {
+            log('\nCalling logout endpoint...');
+            
+            try {
+                const response = await fetch('https://api.navicore.tech/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                log('Logout response status: ' + response.status);
+                const data = await response.json();
+                log('Logout response: ' + JSON.stringify(data, null, 2));
+                
+                // Check auth again
+                await checkAuth();
+                
+            } catch (error) {
+                log('Error during logout: ' + error.message);
+            }
+        }
+        
+        // Check initial state
+        checkAuth();
+    </script>
+</body>
+</html>

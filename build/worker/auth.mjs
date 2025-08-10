@@ -475,7 +475,15 @@ export async function handleLogout(request, env) {
     'Access-Control-Allow-Credentials': 'true',
   };
   
-  // Clear the auth cookie
+  console.log('Logout request received from:', origin);
+  
+  // Clear the auth cookie by setting it to expire immediately
+  // Use exact same parameters as login but with Max-Age=0 and expires in the past
+  const expiredDate = new Date(0).toUTCString();
+  const clearCookie = `auth_token=; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0; Expires=${expiredDate}`;
+  
+  console.log('Clearing cookie with:', clearCookie);
+  
   return new Response(JSON.stringify({ 
     success: true,
     message: 'Logged out successfully' 
@@ -484,7 +492,7 @@ export async function handleLogout(request, env) {
     headers: { 
       ...corsHeaders, 
       'Content-Type': 'application/json',
-      'Set-Cookie': 'auth_token=; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0'
+      'Set-Cookie': clearCookie
     }
   });
 }

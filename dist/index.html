@@ -266,6 +266,7 @@
         
         // Handle logout
         window.handleLogout = async function() {
+            console.log('Logout initiated...');
             try {
                 const response = await fetch('https://api.navicore.tech/auth/logout', {
                     method: 'POST',
@@ -273,13 +274,25 @@
                 });
                 
                 if (response.ok) {
-                    // Refresh auth status
-                    window.checkAuthStatus();
-                    // Redirect to home
-                    window.location.hash = '#home';
+                    console.log('Logout successful, clearing client state...');
+                    
+                    // Clear any client-side storage
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // Force complete page reload to clear all state
+                    // This ensures cookies are processed and all JS state is reset
+                    window.location.href = '/#home';
+                    window.location.reload(true);
+                } else {
+                    console.error('Logout failed with status:', response.status);
+                    // Still try to reload to reset state
+                    window.location.reload(true);
                 }
             } catch (error) {
                 console.error('Logout failed:', error);
+                // Even on error, reload to try to reset state
+                window.location.reload(true);
             }
         };
         

@@ -129,6 +129,8 @@ export default {
         return await serveStaticTemplate('login.html');
       } else if (path === '/templates/register' && method === 'GET') {
         return await serveStaticTemplate('register.html');
+      } else if (path === '/templates/force-logout' && method === 'GET') {
+        return await serveStaticTemplate('force-logout.html');
       } else if (path.match(/^\/album\/.+$/) && method === 'GET') {
         return await handleAlbumPage(request, env);
       } else if (path.match(/^\/track\/.+$/) && method === 'GET') {
