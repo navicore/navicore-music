@@ -530,17 +530,33 @@ export async function handleLogout(request, env) {
   // Clear the auth cookie
   const clearCookie = `auth_token=; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0`;
   
-  return new Response(JSON.stringify({ 
-    success: true,
-    message: 'Logged out successfully' 
-  }), {
-    status: 200,
-    headers: { 
-      ...corsHeaders, 
-      'Content-Type': 'application/json',
-      'Set-Cookie': clearCookie
-    }
-  });
+  // Check if this is an HTMX request
+  const isHtmx = request.headers.get('HX-Request') === 'true';
+  
+  if (isHtmx) {
+    // For HTMX, redirect to home page
+    return new Response('', {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Set-Cookie': clearCookie,
+        'HX-Redirect': '/'
+      }
+    });
+  } else {
+    // For API calls, return JSON
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'Logged out successfully' 
+    }), {
+      status: 200,
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'Set-Cookie': clearCookie
+      }
+    });
+  }
 }
 
 export async function handleAuthStatus(request, env) {
