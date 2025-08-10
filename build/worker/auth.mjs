@@ -304,7 +304,7 @@ export async function handleRegister(request, env) {
       headers: { 
         ...corsHeaders, 
         'Content-Type': 'application/json',
-        'Set-Cookie': `auth_token=${jwt}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${7 * 24 * 60 * 60}`
+        'Set-Cookie': `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${7 * 24 * 60 * 60}`
       }
     });
     
@@ -425,7 +425,8 @@ export async function handleLogin(request, env) {
     const maxAge = rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION;
     const jwt = await createJWT(user.id, user.email, env, maxAge / 1000);
     
-    const cookieValue = `auth_token=${jwt}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
+    // Set cookie for both api.navicore.tech and music.navicore.tech
+    const cookieValue = `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
     console.log('Login successful:', {
       email: user.email,
       rememberMe: rememberMe,
@@ -483,7 +484,7 @@ export async function handleLogout(request, env) {
     headers: { 
       ...corsHeaders, 
       'Content-Type': 'application/json',
-      'Set-Cookie': 'auth_token=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0'
+      'Set-Cookie': 'auth_token=; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0'
     }
   });
 }
