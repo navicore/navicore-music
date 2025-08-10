@@ -474,14 +474,14 @@ export async function handleLogin(request, env) {
     const cookieValue = `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
     
     if (isHtmx) {
-      // For HTMX, use HX-Redirect header to trigger a full page navigation
-      // HTMX will handle the redirect client-side
+      // For HTMX, use HX-Refresh header to trigger a full page reload
+      // This ensures the cookie is set and the page reloads with auth state
       return new Response('', {
         status: 200,
         headers: {
           ...corsHeaders,
           'Set-Cookie': cookieValue,
-          'HX-Redirect': '/#music'
+          'HX-Refresh': 'true'
         }
       });
     } else {
