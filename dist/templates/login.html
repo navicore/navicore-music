@@ -121,7 +121,13 @@ if (!loginForm) {
         
         // Only show success if explicitly successful
         if (response.ok && result.success === true) {
-            console.log('Login successful, verifying session...');
+            console.log('Login successful!');
+            
+            // Store the token in localStorage since cookies aren't working reliably
+            if (result.token) {
+                localStorage.setItem('auth_token', result.token);
+                console.log('Token stored in localStorage');
+            }
             
             // Verify the session was established before redirecting
             const verifyResponse = await fetch('https://api.navicore.tech/auth/status', {
