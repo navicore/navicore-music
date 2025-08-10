@@ -462,9 +462,6 @@ export async function handleLogin(request, env) {
     // Set cookie for authentication
     const cookieValue = `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
     
-    // Check if this is an HTMX request
-    const isHtmx = request.headers.get('HX-Request') === 'true';
-    
     if (isHtmx) {
       // For HTMX, return HTML redirect to reload the whole app with auth cookie set
       const redirectHtml = `
