@@ -337,7 +337,26 @@ export async function handleLogin(request, env) {
   };
   
   try {
-    const { email, password, rememberMe, mfaCode } = await request.json();
+    // Check if this is an HTMX request
+    const isHtmx = request.headers.get('HX-Request') === 'true';
+    
+    let email, password, rememberMe, mfaCode;
+    
+    if (isHtmx) {
+      // Parse form data for HTMX requests
+      const formData = await request.formData();
+      email = formData.get('email');
+      password = formData.get('password');
+      rememberMe = formData.get('rememberMe') === 'true';
+      mfaCode = formData.get('mfaCode');
+    } else {
+      // Parse JSON for API requests
+      const data = await request.json();
+      email = data.email;
+      password = data.password;
+      rememberMe = data.rememberMe;
+      mfaCode = data.mfaCode;
+    }
     
     if (!email || !password) {
       return new Response(JSON.stringify({ 
@@ -440,25 +459,55 @@ export async function handleLogin(request, env) {
       maxAgeDays: maxAge / 1000 / 60 / 60 / 24
     });
     
-    // Return token in response body for localStorage, not as cookie
-    return new Response(JSON.stringify({ 
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.display_name,
-        emailVerified: user.email_verified
-      },
-      token: jwt,
-      expiresIn: maxAge / 1000
-    }), {
-      status: 200,
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json'
-        // No Set-Cookie header - token goes in response body
-      }
-    });
+    // Set cookie for authentication
+    const cookieValue = `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
+    
+    // Check if this is an HTMX request
+    const isHtmx = request.headers.get('HX-Request') === 'true';
+    
+    if (isHtmx) {
+      // For HTMX, return HTML redirect to reload the whole app with auth cookie set
+      const redirectHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta http-equiv="refresh" content="0; url=/">
+          <script>window.location.href = '/#music';</script>
+        </head>
+        <body>
+          <p>Login successful! Redirecting...</p>
+        </body>
+        </html>
+      `;
+      
+      return new Response(redirectHtml, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/html',
+          'Set-Cookie': cookieValue,
+          'HX-Redirect': '/#music'
+        }
+      });
+    } else {
+      // For API calls, return JSON
+      return new Response(JSON.stringify({ 
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          displayName: user.display_name,
+          emailVerified: user.email_verified
+        }
+      }), {
+        status: 200,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Set-Cookie': cookieValue
+        }
+      });
+    }
     
   } catch (error) {
     console.error('Login error:', error);
@@ -481,8 +530,9 @@ export async function handleLogout(request, env) {
     'Access-Control-Allow-Credentials': 'true',
   };
   
-  // With localStorage/Bearer tokens, logout is handled client-side
-  // Server just acknowledges the request
+  // Clear the auth cookie
+  const clearCookie = `auth_token=; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0`;
+  
   return new Response(JSON.stringify({ 
     success: true,
     message: 'Logged out successfully' 
@@ -490,8 +540,8 @@ export async function handleLogout(request, env) {
     status: 200,
     headers: { 
       ...corsHeaders, 
-      'Content-Type': 'application/json'
-      // No cookie clearing needed - auth is via Bearer tokens
+      'Content-Type': 'application/json',
+      'Set-Cookie': clearCookie
     }
   });
 }
@@ -532,18 +582,25 @@ export async function handleAuthStatus(request, env) {
 
 // Middleware to check authentication
 export async function requireAuth(request, env) {
-  // Check for JWT in Authorization header (no more cookie checks)
+  // Check for JWT in cookie first, then Authorization header
+  const cookie = request.headers.get('Cookie');
   const authHeader = request.headers.get('Authorization');
   
   let token = null;
   
-  if (authHeader) {
+  // Try cookie first (for HTMX requests)
+  if (cookie) {
+    const match = cookie.match(/auth_token=([^;]+)/);
+    if (match) token = match[1];
+  }
+  
+  // Fall back to Authorization header (for API requests)
+  if (!token && authHeader) {
     const match = authHeader.match(/Bearer (.+)/);
     if (match) token = match[1];
   }
   
   if (!token) {
-    console.log('requireAuth - No token found');
     return null;
   }
   
