@@ -359,6 +359,17 @@ export async function handleLogin(request, env) {
     }
     
     if (!email || !password) {
+      if (isHtmx) {
+        // Return error as HTML for HTMX
+        return new Response(`
+          <div class="alert alert-error">
+            <span>Email and password are required</span>
+          </div>
+        `, {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'text/html' }
+        });
+      }
       return new Response(JSON.stringify({ 
         error: 'Email and password are required' 
       }), {
@@ -463,25 +474,12 @@ export async function handleLogin(request, env) {
     const cookieValue = `auth_token=${jwt}; Domain=.navicore.tech; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge / 1000}`;
     
     if (isHtmx) {
-      // For HTMX, return HTML redirect to reload the whole app with auth cookie set
-      const redirectHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta http-equiv="refresh" content="0; url=/">
-          <script>window.location.href = '/#music';</script>
-        </head>
-        <body>
-          <p>Login successful! Redirecting...</p>
-        </body>
-        </html>
-      `;
-      
-      return new Response(redirectHtml, {
+      // For HTMX, use HX-Redirect header to trigger a full page navigation
+      // HTMX will handle the redirect client-side
+      return new Response('', {
         status: 200,
         headers: {
           ...corsHeaders,
-          'Content-Type': 'text/html',
           'Set-Cookie': cookieValue,
           'HX-Redirect': '/#music'
         }

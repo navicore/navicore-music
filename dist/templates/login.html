@@ -11,8 +11,9 @@
         
         <form class="mt-8 space-y-6" 
               hx-post="https://api.navicore.tech/auth/login"
-              hx-target="body"
-              hx-swap="innerHTML">
+              hx-target="#auth-message"
+              hx-swap="innerHTML"
+              hx-indicator="#login-spinner">
             
             <div id="auth-message"></div>
             
@@ -61,7 +62,7 @@
             
             <button type="submit" 
                     class="btn btn-primary w-full">
-                <span class="htmx-indicator">
+                <span id="login-spinner" class="htmx-indicator">
                     <span class="loading loading-spinner loading-sm"></span>
                 </span>
                 Sign In
