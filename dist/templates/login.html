@@ -111,10 +111,11 @@ document.getElementById('login-form').addEventListener('submit', async function(
         });
         
         const result = await response.json();
-        console.log('Login response:', response.status, result);
+        console.log('Login response - Status:', response.status, 'OK:', response.ok, 'Result:', result);
         
         // Only show success if explicitly successful
         if (response.ok && result.success === true) {
+            console.log('Login successful, showing success message');
                 authMessage.innerHTML = `
                     <div class="alert alert-success">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
