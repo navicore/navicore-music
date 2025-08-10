@@ -50,6 +50,9 @@ export default {
         return await handleLogout(request, env);
       } else if (path === '/auth/status' && method === 'GET') {
         return await handleAuthStatus(request, env);
+      } else if (path === '/auth/status-panel' && method === 'GET') {
+        const { handleAuthStatusPanel } = await import('./auth-panel.mjs');
+        return await handleAuthStatusPanel(request, env);
       }
       
       // Public routes
