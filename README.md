@@ -1,3 +1,8 @@
+<!-- ghmig:moved -->
+> **This repository has moved to [https://git.navicore.tech/navicore/navicore-music](https://git.navicore.tech/navicore/navicore-music).**
+>
+> The GitHub copy is archived and no longer maintained.
+
 # Navicore Music
 
 A personal music streaming service built with Rust, WebAssembly, and Cloudflare R2.
